@@ -220,7 +220,7 @@ func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx conte
 	})
 }
 
-func (a *App) CreateBasicDialog(title, dismiss string, icon fyne.Resource, message string) dialog.Dialog {
+func (a *App) CreateBasicDialog(title, dismiss, message string, icon fyne.Resource) dialog.Dialog {
 	diag := dialog.NewCustom(title, dismiss,
 		WrapWithMinSize(widget.NewLabel(message), a.dialogMinSize(), func(o fyne.CanvasObject) {
 			w := o.(*widget.Label)
@@ -229,13 +229,15 @@ func (a *App) CreateBasicDialog(title, dismiss string, icon fyne.Resource, messa
 		}),
 		a.window,
 	)
-	diag.SetIcon(icon)
+	if icon != nil {
+		diag.SetIcon(icon)
+	}
 	return diag
 }
 
 func (a *App) ShowInformationDialog(message string, onClosed func()) {
 	a.DoWhenNoOverlay(func() {
-		diag := a.CreateBasicDialog(lang.L("Information"), lang.L("OK"), theme.InfoIcon(), message)
+		diag := a.CreateBasicDialog(lang.L("Information"), lang.L("OK"), message, theme.InfoIcon())
 		if onClosed != nil {
 			diag.SetOnClosed(onClosed)
 		}
@@ -245,7 +247,7 @@ func (a *App) ShowInformationDialog(message string, onClosed func()) {
 
 func (a *App) ShowErrorDialog(message string, onClosed func()) {
 	a.DoWhenNoOverlay(func() {
-		diag := a.CreateBasicDialog(lang.L("Error"), lang.L("OK"), theme.ErrorIcon(), message)
+		diag := a.CreateBasicDialog(lang.L("Error"), lang.L("OK"), message, theme.ErrorIcon())
 		if onClosed != nil {
 			diag.SetOnClosed(onClosed)
 		}
