@@ -141,13 +141,13 @@ func (a *App) AddExitedForegroundListener(fn func()) {
 	a.exitedForegroundListeners = append(a.exitedForegroundListeners, fn)
 }
 
-func (a *App) Go(fn func(ctx context.Context)) <-chan struct{} {
+func (a *App) Go(fn func(ctx context.Context)) (done <-chan struct{}, err error) {
 	if a.runWasCalled == 0 {
 		panic("App.Run() was not called")
 	}
-	done := make(chan struct{})
-	a.runner.DoAsync(func(ctx context.Context) {
-		defer close(done)
+	d := make(chan struct{})
+	err = a.runner.DoAsync(func(ctx context.Context) {
+		defer close(d)
 		select {
 		case <-ctx.Done():
 			return
@@ -155,17 +155,20 @@ func (a *App) Go(fn func(ctx context.Context)) <-chan struct{} {
 		}
 		fn(ctx)
 	})
-	return done
+	if err != nil {
+		close(d)
+	}
+	return d, err
 }
 
-func (a *App) Do(fn func()) <-chan struct{} {
+func (a *App) Do(fn func()) (done <-chan struct{}, err error) {
 	return a.Go(func(context.Context) {
 		fyne.DoAndWait(fn)
 	})
 }
 
-func (a *App) DoWhenNoOverlay(fn func()) {
-	a.Go(func(ctx context.Context) {
+func (a *App) DoWhenNoOverlay(fn func()) (done <-chan struct{}, err error) {
+	return a.Go(func(ctx context.Context) {
 		for finished := false; !finished; {
 			fyne.DoAndWait(func() {
 				if a.window.Canvas().Overlays().Top() != nil {
@@ -197,7 +200,7 @@ func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx conte
 		}
 		diag.SetOnClosed(cancel)
 		diag.Show()
-		if e := a.Go(func(ctx2 context.Context) {
+		if _, e := a.Go(func(ctx2 context.Context) {
 			defer cancel()
 			go func() {
 				select {
