@@ -91,7 +91,7 @@ func (a *App) Run() {
 			fyne.DoAndWait(a.window.Close)
 		}()
 	})
-	a.fyneApp.Run()
+	a.window.ShowAndRun()
 	stopOnce.Do(a.stop)
 }
 
