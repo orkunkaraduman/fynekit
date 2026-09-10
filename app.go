@@ -223,19 +223,28 @@ func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx conte
 	})
 }
 
-func (a *App) CreateBasicDialog(title, dismiss, message string, icon fyne.Resource) dialog.Dialog {
+func (a *App) CreateCustomDialog(title, dismiss string, content fyne.CanvasObject, icon fyne.Resource) *dialog.CustomDialog {
 	diag := dialog.NewCustom(title, dismiss,
-		WrapWithMinSize(widget.NewLabel(message), a.dialogMinSize(), func(o fyne.CanvasObject) {
-			w := o.(*widget.Label)
-			w.Alignment = fyne.TextAlignCenter
-			w.Wrapping = fyne.TextWrapWord
-		}),
+		WrapWithMinSize(content, a.dialogMinSize(), nil),
 		a.window,
 	)
 	if icon != nil {
 		diag.SetIcon(icon)
 	}
 	return diag
+}
+
+func (a *App) CreateBasicDialog(title, dismiss, message string, icon fyne.Resource) dialog.Dialog {
+	return a.CreateCustomDialog(
+		title,
+		dismiss,
+		Wrap(widget.NewLabel(message), func(o fyne.CanvasObject) {
+			w := o.(*widget.Label)
+			w.Alignment = fyne.TextAlignCenter
+			w.Wrapping = fyne.TextWrapWord
+		}),
+		icon,
+	)
 }
 
 func (a *App) ShowInformationDialog(message string, onClosed func()) {
