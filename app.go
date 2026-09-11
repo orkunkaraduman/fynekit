@@ -234,7 +234,7 @@ func (a *App) CreateCustomDialog(title, dismiss string, content fyne.CanvasObjec
 	return diag
 }
 
-func (a *App) CreateBasicDialog(title, dismiss, message string, icon fyne.Resource) dialog.Dialog {
+func (a *App) CreateBasicDialog(title, dismiss, message string, icon fyne.Resource) *dialog.CustomDialog {
 	return a.CreateCustomDialog(
 		title,
 		dismiss,
