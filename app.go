@@ -141,19 +141,20 @@ func (a *App) AddExitedForegroundListener(fn func()) {
 	a.exitedForegroundListeners = append(a.exitedForegroundListeners, fn)
 }
 
-func (a *App) Go(fn func(ctx context.Context)) (done <-chan struct{}, err error) {
+func (a *App) Go(fn func(ctx context.Context) error) (done <-chan error, err error) {
 	if a.runWasCalled == 0 {
 		panic("App.Run() was not called")
 	}
-	d := make(chan struct{})
+	d := make(chan error, 1)
 	err = a.runner.DoAsync(func(ctx context.Context) {
 		defer close(d)
 		select {
 		case <-ctx.Done():
+			d <- ctx.Err()
 			return
 		case <-a.appStarted:
 		}
-		fn(ctx)
+		d <- fn(ctx)
 	})
 	if err != nil {
 		close(d)
@@ -161,14 +162,15 @@ func (a *App) Go(fn func(ctx context.Context)) (done <-chan struct{}, err error)
 	return d, err
 }
 
-func (a *App) Do(fn func()) (done <-chan struct{}, err error) {
-	return a.Go(func(context.Context) {
+func (a *App) Do(fn func()) (done <-chan error, err error) {
+	return a.Go(func(context.Context) error {
 		fyne.DoAndWait(fn)
+		return nil
 	})
 }
 
-func (a *App) DoWhenNoOverlay(fn func()) (done <-chan struct{}, err error) {
-	return a.Go(func(ctx context.Context) {
+func (a *App) DoWhenNoOverlay(fn func()) (done <-chan error, err error) {
+	return a.Go(func(ctx context.Context) error {
 		for finished := false; !finished; {
 			fyne.DoAndWait(func() {
 				if a.window.Canvas().Overlays().Top() != nil {
@@ -186,6 +188,7 @@ func (a *App) DoWhenNoOverlay(fn func()) (done <-chan struct{}, err error) {
 			case <-time.After(time.Second / 64):
 			}
 		}
+		return nil
 	})
 }
 
@@ -200,7 +203,7 @@ func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx conte
 		}
 		diag.SetOnClosed(cancel)
 		diag.Show()
-		if _, e := a.Go(func(ctx2 context.Context) {
+		if _, e := a.Go(func(ctx2 context.Context) error {
 			defer cancel()
 			go func() {
 				select {
@@ -216,6 +219,7 @@ func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx conte
 					finalize()
 				}
 			})
+			return nil
 		}); e != nil {
 			diag.Dismiss()
 			cancel()
