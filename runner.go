@@ -16,12 +16,12 @@ func NewRunner() *Runner {
 }
 
 func NewRunnerWithContext(ctx context.Context) *Runner {
-	r := &Runner{
-		ctx: ctx,
+	r := &Runner{}
+	ctxParent := context.Background()
+	if ctx != nil {
+		ctxParent = ctx
 	}
-	if ctx == nil {
-		r.ctx, r.cancel = context.WithCancel(context.Background())
-	}
+	r.ctx, r.cancel = context.WithCancel(ctxParent)
 	return r
 }
 
@@ -58,9 +58,7 @@ func (r *Runner) Ctx() context.Context {
 }
 
 func (r *Runner) Cancel() {
-	if r.cancel != nil {
-		r.cancel()
-	}
+	r.cancel()
 }
 
 func (r *Runner) Wait() {
