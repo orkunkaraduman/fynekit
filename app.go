@@ -2,7 +2,6 @@ package fynekit
 
 import (
 	"context"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -83,25 +82,20 @@ func (a *App) Run() {
 	if !atomic.CompareAndSwapInt32(&a.runWasCalled, 0, 1) {
 		panic("App.Run() was already called")
 	}
-	var stopOnce sync.Once
 	a.Refresh()
 	a.window.SetCloseIntercept(func() {
 		go func() {
-			stopOnce.Do(a.stop)
+			a.runner.Stop()
 			fyne.DoAndWait(a.window.Close)
 		}()
 	})
 	a.window.ShowAndRun()
-	stopOnce.Do(a.stop)
+	a.runner.Stop()
+	a.destroy()
 }
 
 func (a *App) Refresh() {
 	a.window.SetContent(a.build(a))
-}
-
-func (a *App) stop() {
-	a.runner.Stop()
-	a.destroy()
 }
 
 func (a *App) AppStarted() <-chan struct{} {
