@@ -1,5 +1,9 @@
 package fynekit
 
+/*
+#cgo CFLAGS: -xobjective-c -fvisibility=hidden
+*/
+import "C"
 import (
 	"sync"
 

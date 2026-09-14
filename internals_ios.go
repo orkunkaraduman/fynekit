@@ -3,8 +3,6 @@
 package fynekit
 
 /*
-#cgo CFLAGS: -xobjective-c
-
 #import <UIKit/UIKit.h>
 
 BOOL isDarkMode(void) {
