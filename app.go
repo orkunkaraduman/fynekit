@@ -127,7 +127,7 @@ func (a *App) Go(fn func(ctx context.Context) error) (done <-chan error, err err
 		panic("App.Run() was not called")
 	}
 	d := make(chan error, 1)
-	err = a.runner.DoAsync(func(ctx context.Context) {
+	err = a.runner.RunAsync(func(ctx context.Context) {
 		defer close(d)
 		select {
 		case <-ctx.Done():

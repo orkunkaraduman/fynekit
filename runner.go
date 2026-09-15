@@ -25,7 +25,7 @@ func NewRunnerWithContext(ctx context.Context) *Runner {
 	return r
 }
 
-func (r *Runner) do(fn func(context.Context), async bool) error {
+func (r *Runner) run(fn func(context.Context), async bool) error {
 	r.wg.Add(1)
 	if e := r.ctx.Err(); e != nil {
 		r.wg.Done()
@@ -45,12 +45,12 @@ func (r *Runner) do(fn func(context.Context), async bool) error {
 	return nil
 }
 
-func (r *Runner) Do(fn func(context.Context)) error {
-	return r.do(fn, false)
+func (r *Runner) Run(fn func(context.Context)) error {
+	return r.run(fn, false)
 }
 
-func (r *Runner) DoAsync(fn func(context.Context)) error {
-	return r.do(fn, true)
+func (r *Runner) RunAsync(fn func(context.Context)) error {
+	return r.run(fn, true)
 }
 
 func (r *Runner) Ctx() context.Context {
