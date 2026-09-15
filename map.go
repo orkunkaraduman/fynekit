@@ -2,6 +2,7 @@ package fynekit
 
 import (
 	"image/color"
+	"math"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -15,6 +16,11 @@ type Map struct {
 
 	source MapSource
 	runner *Runner
+
+	// center lat, lon
+	lat, lon float64
+	// zoom
+	zoom int
 }
 
 func NewMap(source MapSource) *Map {
@@ -34,8 +40,20 @@ func (m *Map) Stop() {
 	m.runner.Stop()
 }
 
+func (m *Map) PanToLatLon(lat, lon float64) {
+
+}
+
 func (m *Map) worldSize(zoom int) int {
 	return m.source.TileSize() * (1 << zoom)
+}
+
+func (m *Map) getPixFromLatLon(lat, lon float64) (x, y float64) {
+	n := float64(m.worldSize(m.zoom))
+	x = (lon + 180.0) / 360.0 * n
+	latRad := lat * math.Pi / 180.0
+	y = (1.0 - math.Log(math.Tan(latRad)+1.0/math.Cos(latRad))/math.Pi) / 2.0 * n
+	return
 }
 
 var _ fyne.WidgetRenderer = (*mapRenderer)(nil)

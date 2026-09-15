@@ -1,11 +1,15 @@
 package fynekit
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"image"
 	"image/png"
 	"net/http"
 )
+
+var _ MapSource = (*OsmMapSource)(nil)
 
 type OsmMapSource struct {
 	address string
@@ -29,9 +33,13 @@ func (s *OsmMapSource) TileSize() int {
 	return 256
 }
 
-func (c *OsmMapSource) GetTile(x, y, zoom int) (tile image.Image, err error) {
-	u := fmt.Sprintf(c.address, zoom, x, y)
-	resp, err := http.Get(u)
+func (s *OsmMapSource) GetTile(ctx context.Context, x, y, zoom int) (tile image.Image, err error) {
+	u := fmt.Sprintf(s.address, zoom, x, y)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -39,5 +47,15 @@ func (c *OsmMapSource) GetTile(x, y, zoom int) (tile image.Image, err error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("status code %d", resp.StatusCode)
 	}
-	return png.Decode(resp.Body)
+	tile, err = png.Decode(resp.Body)
+	if err != nil {
+		return
+	}
+	ts := s.TileSize()
+	sz := tile.Bounds().Size()
+	if sz.X != ts || sz.Y != ts {
+		err = errors.New("tile size mismatch")
+		return
+	}
+	return
 }

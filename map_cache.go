@@ -1,10 +1,13 @@
 package fynekit
 
 import (
+	"context"
 	"fmt"
 	"image"
 	"sync"
 )
+
+var _ MapSource = (*MapCache)(nil)
 
 type MapCache struct {
 	source  MapSource
@@ -26,7 +29,7 @@ func (c *MapCache) TileSize() int {
 	return c.source.TileSize()
 }
 
-func (c *MapCache) GetTile(x, y, zoom int) (tile image.Image, err error) {
+func (c *MapCache) GetTile(ctx context.Context, x, y, zoom int) (tile image.Image, err error) {
 	key := fmt.Sprintf("%d/%d/%d", zoom, x, y)
 	locker := c.nl.Locker(key)
 	locker.Lock()
@@ -35,7 +38,7 @@ func (c *MapCache) GetTile(x, y, zoom int) (tile image.Image, err error) {
 	tile = c.cache[key]
 	c.cacheMu.RUnlock()
 	if tile == nil {
-		tile, err = c.source.GetTile(x, y, zoom)
+		tile, err = c.source.GetTile(ctx, x, y, zoom)
 		if err != nil {
 			return
 		}
