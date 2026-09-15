@@ -264,3 +264,29 @@ func (a *App) ShowErrorDialog(message string, onClosed func()) {
 		diag.Show()
 	})
 }
+
+func (a *App) ShowInputDialog(title, message string, icon fyne.Resource, onConfirm func(string)) {
+	a.DoWhenNoOverlay(func() {
+		entry := widget.NewEntry()
+		diag := a.CreateCustomDialog(title, lang.L("OK"),
+			widget.NewForm(
+				widget.NewFormItem(message, entry),
+			),
+			icon,
+		)
+
+		confirmBtn := widget.NewButtonWithIcon(lang.L("OK"), theme.ConfirmIcon(), func() {
+			if onConfirm != nil {
+				onConfirm(entry.Text)
+			}
+			diag.Hide()
+		})
+		confirmBtn.Importance = widget.HighImportance
+		cancelBtn := widget.NewButtonWithIcon(lang.L("Cancel"), theme.CancelIcon(), diag.Hide)
+		diag.SetButtons([]fyne.CanvasObject{
+			confirmBtn,
+			cancelBtn,
+		})
+		diag.Show()
+	})
+}
