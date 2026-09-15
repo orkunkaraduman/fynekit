@@ -82,7 +82,7 @@ func (a *App) Run() {
 	if !atomic.CompareAndSwapInt32(&a.runWasCalled, 0, 1) {
 		panic("App.Run() was already called")
 	}
-	a.Refresh()
+	a.Rebuild()
 	a.window.SetCloseIntercept(func() {
 		go func() {
 			a.runner.Stop()
@@ -94,7 +94,7 @@ func (a *App) Run() {
 	a.destroy()
 }
 
-func (a *App) Refresh() {
+func (a *App) Rebuild() {
 	a.window.SetContent(a.build(a))
 }
 
