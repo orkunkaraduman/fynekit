@@ -173,25 +173,12 @@ func (a *App) DoWhenNoOverlay(fn func()) (done <-chan error, err error) {
 	})
 }
 
-func (a *App) GetDialogMinSize() fyne.Size {
-	s := a.window.Canvas().Size()
-	if fyne.IsVertical(fyne.CurrentDevice().Orientation()) {
-		s.Width *= 0.75
-		s.Height = 0
-	} else {
-		s.Width *= 0.25
-		s.Height = 0
-	}
-	s = s.Max(fyne.NewSize(200, 0))
-	return s
-}
-
 func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx context.Context) (finalize func())) {
 	a.Do(func() {
 		ctx, cancel := context.WithCancel(ctx)
 		if diag == nil {
 			diag = dialog.NewCustomWithoutButtons(lang.L("Please wait..."),
-				WrapWithMinSize(widget.NewProgressBarInfinite(), a.GetDialogMinSize(), nil),
+				WrapWithMinSize(widget.NewProgressBarInfinite(), a.getDialogMinSize(), nil),
 				a.window,
 			)
 		}
@@ -223,7 +210,7 @@ func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx conte
 
 func (a *App) CreateCustomDialog(title, dismiss string, content fyne.CanvasObject, icon fyne.Resource) *dialog.CustomDialog {
 	diag := dialog.NewCustom(title, dismiss,
-		WrapWithMinSize(content, a.GetDialogMinSize(), nil),
+		WrapWithMinSize(content, a.getDialogMinSize(), nil),
 		a.window,
 	)
 	if icon != nil {
@@ -299,4 +286,17 @@ func (a *App) ShowInputDialog(title, message string, icon fyne.Resource, onConfi
 
 		diag.Show()
 	})
+}
+
+func (a *App) getDialogMinSize() fyne.Size {
+	s := a.window.Canvas().Size()
+	if fyne.IsVertical(fyne.CurrentDevice().Orientation()) {
+		s.Width *= 0.75
+		s.Height = 0
+	} else {
+		s.Width *= 0.25
+		s.Height = 0
+	}
+	s = s.Max(fyne.NewSize(200, 0))
+	return s
 }
