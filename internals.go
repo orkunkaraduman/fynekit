@@ -31,8 +31,5 @@ func SetThemeVariant(settings fyne.Settings, variant fyne.ThemeVariant) {
 //go:linkname SetupLang fyne.io/fyne/v2/lang.setupLang
 func SetupLang(lang string)
 
-//go:linkname UpdateLocalizer fyne.io/fyne/v2/lang.updateLocalizer
-func UpdateLocalizer()
-
 //go:linkname ClosestSupportedLocale fyne.io/fyne/v2/lang.closestSupportedLocale
 func ClosestSupportedLocale(locs []string) fyne.Locale
