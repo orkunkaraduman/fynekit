@@ -262,19 +262,18 @@ func (a *App) ShowInputDialog(title, message string, icon fyne.Resource, onConfi
 			icon,
 		)
 
+		confirmed := false
+
 		confirmBtn := widget.NewButtonWithIcon(lang.L("OK"), theme.ConfirmIcon(), func() {
-			if onConfirm != nil {
-				onConfirm(entry.Text)
-			}
+			confirmed = true
 			diag.Hide()
 		})
 		confirmBtn.Importance = widget.HighImportance
+
 		cancelBtn := widget.NewButtonWithIcon(lang.L("Cancel"), theme.CancelIcon(), func() {
-			if onCancel != nil {
-				onCancel()
-			}
-			diag.Hide()
+			diag.Dismiss()
 		})
+
 		diag.SetButtons([]fyne.CanvasObject{
 			confirmBtn,
 			cancelBtn,
@@ -283,6 +282,19 @@ func (a *App) ShowInputDialog(title, message string, icon fyne.Resource, onConfi
 		entry.OnSubmitted = func(string) {
 			confirmBtn.OnTapped()
 		}
+
+		diag.SetOnClosed(func() {
+			if confirmed {
+				if onConfirm != nil {
+					onConfirm(entry.Text)
+				}
+			} else {
+				if onCancel != nil {
+					onCancel()
+				}
+			}
+
+		})
 
 		diag.Show()
 	})
