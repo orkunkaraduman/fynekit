@@ -287,6 +287,11 @@ func (a *App) ShowInputDialog(title, message string, icon fyne.Resource, onConfi
 			confirmBtn,
 			cancelBtn,
 		})
+
+		entry.OnSubmitted = func(string) {
+			confirmBtn.OnTapped()
+		}
+
 		diag.Show()
 	})
 }
