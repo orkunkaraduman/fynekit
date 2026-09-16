@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
-	"log"
 	"math"
 	"net"
 	"net/http"
@@ -318,8 +317,7 @@ func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, dr
 	}
 	tile, err := r.m.cache.GetTile(ctx, int(floor.X), int(floor.Y), zoom)
 	if err != nil {
-		// TODO: log
-		log.Println(err)
+		fyne.LogError("Unable to get tile from cache.", err)
 		return
 	}
 	fyne.DoAndWait(func() {
