@@ -60,6 +60,17 @@ func (m *Map) SetZoom(zoom int) {
 	m.Refresh()
 }
 
+func (m *Map) Dragged(ev *fyne.DragEvent) {
+	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
+	pos.X -= ev.Dragged.DX
+	pos.Y -= ev.Dragged.DY
+	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
+	m.Refresh()
+}
+
+func (m *Map) DragEnd() {
+}
+
 func (m *Map) getEmptyImage() image.Image {
 	img := image.NewRGBA(image.Rect(0, 0, 1, 1))
 	img.Set(0, 0, theme.ColorForWidget(theme.ColorNameDisabled, m))
