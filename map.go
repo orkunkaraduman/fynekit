@@ -54,6 +54,11 @@ func (m *Map) Stop() {
 	m.runner.Stop()
 }
 
+func (m *Map) InvalidateCache() {
+	m.cache.Invalidate()
+	m.Refresh()
+}
+
 func (m *Map) PanToLatLon(lat, lon float64) {
 	m.Lat, m.Lon = lat, lon
 	m.Refresh()
@@ -168,7 +173,6 @@ func (r *mapRenderer) Destroy() {
 func (r *mapRenderer) Layout(s fyne.Size) {
 	r.canvImg.Resize(s)
 	r.Refresh()
-	//r.m.Refresh()
 }
 
 func (r *mapRenderer) MinSize() fyne.Size {
