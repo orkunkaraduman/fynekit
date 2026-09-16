@@ -90,7 +90,6 @@ func newMapRenderer(m *Map) *mapRenderer {
 	r := &mapRenderer{
 		m: m,
 	}
-	r.img = canvas.NewImageFromImage(r.getEmptyImage())
 	r.Refresh()
 	return r
 }
@@ -125,18 +124,11 @@ func (r *mapRenderer) Refresh() {
 	zoom := r.m.Zoom
 	for y := float32(0); y < size.Height+float32(tileSize); y += float32(tileSize) {
 		for x := float32(0); x < size.Width+float32(tileSize); x += float32(tileSize) {
-			fmt.Println(x, y, size)
 			r.m.runner.RunAsync(func(ctx context.Context) {
 				r.fill(ctx, tileSize, size, img, center, zoom, x, y)
 			})
 		}
 	}
-}
-
-func (r *mapRenderer) getEmptyImage() image.Image {
-	img := image.NewRGBA(image.Rect(0, 0, 1, 1))
-	img.Set(0, 0, color.Gray{Y: 0xc0})
-	return img
 }
 
 func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, img *image.RGBA, center fyne.Position, zoom int, x, y float32) {
@@ -152,19 +144,10 @@ func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, im
 		X: float32(math.Floor(float64(current.X) / float64(tileSize))),
 		Y: float32(math.Floor(float64(current.Y) / float64(tileSize))),
 	}
-	/*floor = fyne.Position{
-		X: float32(math.Trunc(float64(current.X) / float64(tileSize))),
-		Y: float32(math.Trunc(float64(current.Y) / float64(tileSize))),
-	}*/
 	trunc := fyne.Position{
 		X: floor.X * float32(tileSize),
 		Y: floor.Y * float32(tileSize),
 	}
-	rem := fyne.Position{
-		X: current.X - trunc.X,
-		Y: current.Y - trunc.Y,
-	}
-	_ = rem
 	bounds := image.Rectangle{
 		Min: image.Point{X: int(trunc.X - start.X), Y: int(trunc.Y - start.Y)},
 		Max: image.Point{X: int(trunc.X-start.X) + tileSize, Y: int(trunc.Y-start.Y) + tileSize},
