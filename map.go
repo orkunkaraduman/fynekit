@@ -90,6 +90,7 @@ func newMapRenderer(m *Map) *mapRenderer {
 	r := &mapRenderer{
 		m: m,
 	}
+	r.img = canvas.NewImageFromImage(r.getEmptyImage())
 	r.Refresh()
 	return r
 }
@@ -129,6 +130,12 @@ func (r *mapRenderer) Refresh() {
 			})
 		}
 	}
+}
+
+func (r *mapRenderer) getEmptyImage() image.Image {
+	img := image.NewRGBA(image.Rect(0, 0, 1, 1))
+	img.Set(0, 0, color.Gray{Y: 0xc0})
+	return img
 }
 
 func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, img *image.RGBA, center fyne.Position, zoom int, x, y float32) {
