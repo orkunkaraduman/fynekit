@@ -82,9 +82,14 @@ func (m *Map) DragEnd() {
 	m.Refresh()
 }
 
-func (m *Map) getEmptyImage() image.Image {
+func (m *Map) getEmptyRGBAImage() *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, 1, 1))
 	img.Set(0, 0, theme.ColorForWidget(theme.ColorNameDisabled, m))
+	return img
+}
+
+func (m *Map) getEmptyUniformImage() *image.Uniform {
+	img := image.NewUniform(theme.ColorForWidget(theme.ColorNameDisabled, m))
 	return img
 }
 
@@ -116,13 +121,14 @@ var _ fyne.WidgetRenderer = (*mapRenderer)(nil)
 type mapRenderer struct {
 	m       *Map
 	canvImg *canvas.Image
-	drawImg draw.Image
+	drawImg *image.RGBA
 }
 
 func newMapRenderer(m *Map) *mapRenderer {
 	r := &mapRenderer{
 		m:       m,
-		canvImg: canvas.NewImageFromImage(m.getEmptyImage()),
+		canvImg: canvas.NewImageFromImage(m.getEmptyRGBAImage()),
+		drawImg: m.getEmptyRGBAImage(),
 	}
 	r.Refresh()
 	return r
@@ -154,7 +160,7 @@ func (r *mapRenderer) Refresh() {
 	if r.m.draggedIn {
 		img := image.NewRGBA(bounds)
 		draw.Draw(img, bounds,
-			image.NewUniform(theme.ColorForWidget(theme.ColorNameDisabled, r.m)), image.Point{}, draw.Over)
+			r.m.getEmptyUniformImage(), image.Point{}, draw.Over)
 		draw.Draw(img, bounds,
 			r.drawImg, image.Point{X: int(r.m.draggedX), Y: int(r.m.draggedY)}, draw.Over)
 		r.canvImg.Image = img
@@ -163,7 +169,7 @@ func (r *mapRenderer) Refresh() {
 	}
 	r.drawImg = image.NewRGBA(bounds)
 	draw.Draw(r.drawImg, bounds,
-		image.NewUniform(theme.ColorForWidget(theme.ColorNameDisabled, r.m)), image.Point{}, draw.Over)
+		r.m.getEmptyUniformImage(), image.Point{}, draw.Over)
 	r.canvImg.Image = r.drawImg
 	r.canvImg.Refresh()
 	center := r.m.getPosFromLatLon(r.m.Lat, r.m.Lon, r.m.Zoom)
