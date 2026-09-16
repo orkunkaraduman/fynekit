@@ -53,7 +53,7 @@ func NewOsmMapSource(opts ...MapSourceOption) *OsmMapSource {
 		tileSource:        "https://tile.openstreetmap.org/%d/%d/%d.png",
 		userAgent:         "github.com/orkunkaraduman/fynekit.Map/1.0",
 		attributionHidden: false,
-		attributionLabel:  "OpenStreetMap",
+		attributionLabel:  "© OpenStreetMap",
 		attributionURL:    "https://openstreetmap.org",
 	}
 	for _, opt := range opts {

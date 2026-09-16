@@ -9,11 +9,14 @@ import (
 	"math"
 	"net"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -46,9 +49,9 @@ type Map struct {
 	cache  *mapCache
 	runner *Runner
 
-	draggedIn bool
-	draggedX  float32
-	draggedY  float32
+	dragging bool
+	draggedX float32
+	draggedY float32
 }
 
 type MapOption func(*Map)
@@ -142,14 +145,14 @@ func (m *Map) Dragged(ev *fyne.DragEvent) {
 	pos.X -= ev.Dragged.DX
 	pos.Y -= ev.Dragged.DY
 	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
-	m.draggedIn = true
+	m.dragging = true
 	m.draggedX -= ev.Dragged.DX
 	m.draggedY -= ev.Dragged.DY
 	m.Refresh()
 }
 
 func (m *Map) DragEnd() {
-	m.draggedIn = false
+	m.dragging = false
 	m.draggedX = 0
 	m.draggedY = 0
 	m.Refresh()
@@ -192,9 +195,10 @@ func (m *Map) getLatLonFromPos(pos fyne.Position, zoom int) (lat float64, lon fl
 var _ fyne.WidgetRenderer = (*mapRenderer)(nil)
 
 type mapRenderer struct {
-	m       *Map
-	canvImg *canvas.Image
-	drawImg *image.RGBA
+	m         *Map
+	canvImg   *canvas.Image
+	drawImg   *image.RGBA
+	copyright *fyne.Container
 }
 
 func newMapRenderer(m *Map) *mapRenderer {
@@ -203,6 +207,14 @@ func newMapRenderer(m *Map) *mapRenderer {
 		canvImg: canvas.NewImageFromImage(m.getEmptyRGBAImage()),
 		drawImg: m.getEmptyRGBAImage(),
 	}
+
+	u, _ := url.Parse(m.source.AttributionURL())
+	link := widget.NewHyperlink(m.source.AttributionLabel(), u)
+	link.Alignment = fyne.TextAlignTrailing
+	link.SizeName = theme.SizeNameCaptionText
+	link.TextStyle.Bold = true
+	r.copyright = container.NewHBox(layout.NewSpacer(), link)
+
 	r.Refresh()
 	return r
 }
@@ -212,6 +224,9 @@ func (r *mapRenderer) Destroy() {
 
 func (r *mapRenderer) Layout(s fyne.Size) {
 	r.canvImg.Resize(s)
+	ms := r.copyright.MinSize()
+	r.copyright.Resize(fyne.NewSize(s.Width, ms.Height))
+	r.copyright.Move(fyne.NewPos(0, s.Height-ms.Height-theme.Padding()))
 	r.Refresh()
 }
 
@@ -221,7 +236,11 @@ func (r *mapRenderer) MinSize() fyne.Size {
 }
 
 func (r *mapRenderer) Objects() []fyne.CanvasObject {
-	return []fyne.CanvasObject{r.canvImg}
+	objs := []fyne.CanvasObject{r.canvImg}
+	if !r.m.source.AttributionHidden() {
+		objs = append(objs, r.copyright)
+	}
+	return objs
 }
 
 func (r *mapRenderer) Refresh() {
@@ -229,7 +248,7 @@ func (r *mapRenderer) Refresh() {
 	size := r.canvImg.Size()
 	bounds := image.Rect(0, 0,
 		int(math.Round(float64(size.Width))), int(math.Round(float64(size.Height))))
-	if r.m.draggedIn {
+	if r.m.dragging {
 		img := image.NewRGBA(bounds)
 		draw.Draw(img, bounds,
 			r.m.getEmptyUniformImage(), image.Point{}, draw.Over)
