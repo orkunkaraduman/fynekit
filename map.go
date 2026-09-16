@@ -64,6 +64,34 @@ func (m *Map) SetZoom(zoom int) {
 	m.Refresh()
 }
 
+func (m *Map) PanWest(pix int) {
+	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
+	pos.X -= float32(pix)
+	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
+	m.Refresh()
+}
+
+func (m *Map) PanNorth(pix int) {
+	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
+	pos.Y -= float32(pix)
+	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
+	m.Refresh()
+}
+
+func (m *Map) PanEast(pix int) {
+	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
+	pos.X += float32(pix)
+	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
+	m.Refresh()
+}
+
+func (m *Map) PanSouth(pix int) {
+	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
+	pos.Y += float32(pix)
+	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
+	m.Refresh()
+}
+
 func (m *Map) Dragged(ev *fyne.DragEvent) {
 	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
 	pos.X -= ev.Dragged.DX
