@@ -64,11 +64,6 @@ func (m *Map) PanToLatLon(lat, lon float64) {
 	m.Refresh()
 }
 
-func (m *Map) SetZoom(zoom int) {
-	m.Zoom = zoom
-	m.Refresh()
-}
-
 func (m *Map) PanWest(pix int) {
 	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
 	pos.X -= float32(pix)
@@ -94,6 +89,24 @@ func (m *Map) PanSouth(pix int) {
 	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
 	pos.Y += float32(pix)
 	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
+	m.Refresh()
+}
+
+func (m *Map) SetZoom(zoom int) {
+	m.Zoom = zoom
+	m.Refresh()
+}
+
+func (m *Map) ZoomIn() {
+	m.Zoom++
+	m.Refresh()
+}
+
+func (m *Map) ZoomOut() {
+	if m.Zoom <= 0 {
+		return
+	}
+	m.Zoom--
 	m.Refresh()
 }
 
