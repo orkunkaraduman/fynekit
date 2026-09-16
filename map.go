@@ -66,12 +66,12 @@ func (m *Map) getEmptyImage() image.Image {
 	return img
 }
 
-func (m *Map) worldSize() int {
-	return m.source.TileSize() * (1 << m.Zoom)
+func (m *Map) worldSize(zoom int) int {
+	return m.source.TileSize() * (1 << zoom)
 }
 
-func (m *Map) getPosFromLatLon(lat, lon float64) fyne.Position {
-	n := float64(m.worldSize())
+func (m *Map) getPosFromLatLon(lat, lon float64, zoom int) fyne.Position {
+	n := float64(m.worldSize(zoom))
 	x := (lon + 180.0) / 360.0 * n
 	latRad := lat * math.Pi / 180.0
 	y := (1.0 - math.Log(math.Tan(latRad)+1.0/math.Cos(latRad))/math.Pi) / 2.0 * n
@@ -81,16 +81,12 @@ func (m *Map) getPosFromLatLon(lat, lon float64) fyne.Position {
 	}
 }
 
-func (m *Map) getLatLonFromPos(pos fyne.Position) (lat float64, lon float64) {
-	n := float64(m.worldSize())
+func (m *Map) getLatLonFromPos(pos fyne.Position, zoom int) (lat float64, lon float64) {
+	n := float64(m.worldSize(zoom))
 	lon = float64(pos.X)/n*360.0 - 180.0
 	latRad := math.Atan(math.Sinh(math.Pi * (1.0 - 2.0*float64(pos.Y)/n)))
 	lat = latRad * 180.0 / math.Pi
 	return
-}
-
-func (m *Map) getCenterPos() fyne.Position {
-	return m.getPosFromLatLon(m.Lat, m.Lon)
 }
 
 var _ fyne.WidgetRenderer = (*mapRenderer)(nil)
@@ -114,8 +110,8 @@ func (r *mapRenderer) Destroy() {
 
 func (r *mapRenderer) Layout(s fyne.Size) {
 	r.img.Resize(s)
-	r.m.Refresh()
-	//r.img.Refresh()
+	r.Refresh()
+	//r.m.Refresh()
 }
 
 func (r *mapRenderer) MinSize() fyne.Size {
@@ -137,7 +133,7 @@ func (r *mapRenderer) Refresh() {
 		image.NewUniform(theme.ColorForWidget(theme.ColorNameDisabled, r.m)), image.Point{}, draw.Over)
 	r.img.Image = img
 	r.img.Refresh()
-	center := r.m.getCenterPos()
+	center := r.m.getPosFromLatLon(r.m.Lat, r.m.Lon, r.m.Zoom)
 	zoom := r.m.Zoom
 	for y := float32(0); y < size.Height+float32(tileSize); y += float32(tileSize) {
 		for x := float32(0); x < size.Width+float32(tileSize); x += float32(tileSize) {
@@ -187,7 +183,7 @@ func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, im
 	if s := bounds.Size(); s.X <= 0 || s.Y <= 0 {
 		return
 	}
-	if v := float32(r.m.worldSize() / tileSize); !(0 <= floor.X && floor.X < v) || !(0 <= floor.Y && floor.Y < v) {
+	if v := float32(r.m.worldSize(zoom) / tileSize); !(0 <= floor.X && floor.X < v) || !(0 <= floor.Y && floor.Y < v) {
 		return
 	}
 	tile, err := r.m.cache.GetTile(ctx, int(floor.X), int(floor.Y), zoom)
