@@ -25,6 +25,10 @@ type Map struct {
 	source MapSource
 	cache  *mapCache
 	runner *Runner
+
+	draggedIn bool
+	draggedX  float32
+	draggedY  float32
 }
 
 type MapSource interface {
@@ -65,10 +69,17 @@ func (m *Map) Dragged(ev *fyne.DragEvent) {
 	pos.X -= ev.Dragged.DX
 	pos.Y -= ev.Dragged.DY
 	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
+	m.draggedIn = true
+	m.draggedX -= ev.Dragged.DX
+	m.draggedY -= ev.Dragged.DY
 	m.Refresh()
 }
 
 func (m *Map) DragEnd() {
+	m.draggedIn = false
+	m.draggedX = 0
+	m.draggedY = 0
+	m.Refresh()
 }
 
 func (m *Map) getEmptyImage() image.Image {
@@ -103,15 +114,16 @@ func (m *Map) getLatLonFromPos(pos fyne.Position, zoom int) (lat float64, lon fl
 var _ fyne.WidgetRenderer = (*mapRenderer)(nil)
 
 type mapRenderer struct {
-	m   *Map
-	img *canvas.Image
+	m       *Map
+	canvImg *canvas.Image
+	drawImg draw.Image
 }
 
 func newMapRenderer(m *Map) *mapRenderer {
 	r := &mapRenderer{
-		m: m,
+		m:       m,
+		canvImg: canvas.NewImageFromImage(m.getEmptyImage()),
 	}
-	r.img = canvas.NewImageFromImage(m.getEmptyImage())
 	r.Refresh()
 	return r
 }
@@ -120,7 +132,7 @@ func (r *mapRenderer) Destroy() {
 }
 
 func (r *mapRenderer) Layout(s fyne.Size) {
-	r.img.Resize(s)
+	r.canvImg.Resize(s)
 	r.Refresh()
 	//r.m.Refresh()
 }
@@ -131,31 +143,41 @@ func (r *mapRenderer) MinSize() fyne.Size {
 }
 
 func (r *mapRenderer) Objects() []fyne.CanvasObject {
-	return []fyne.CanvasObject{r.img}
+	return []fyne.CanvasObject{r.canvImg}
 }
 
 func (r *mapRenderer) Refresh() {
 	tileSize := r.m.source.TileSize()
-	size := r.img.Size()
+	size := r.canvImg.Size()
 	bounds := image.Rect(0, 0,
 		int(math.Round(float64(size.Width))), int(math.Round(float64(size.Height))))
-	img := image.NewRGBA(bounds)
-	draw.Draw(img, bounds,
+	if r.m.draggedIn {
+		img := image.NewRGBA(bounds)
+		draw.Draw(img, bounds,
+			image.NewUniform(theme.ColorForWidget(theme.ColorNameDisabled, r.m)), image.Point{}, draw.Over)
+		draw.Draw(img, bounds,
+			r.drawImg, image.Point{X: int(r.m.draggedX), Y: int(r.m.draggedY)}, draw.Over)
+		r.canvImg.Image = img
+		r.canvImg.Refresh()
+		return
+	}
+	r.drawImg = image.NewRGBA(bounds)
+	draw.Draw(r.drawImg, bounds,
 		image.NewUniform(theme.ColorForWidget(theme.ColorNameDisabled, r.m)), image.Point{}, draw.Over)
-	r.img.Image = img
-	r.img.Refresh()
+	r.canvImg.Image = r.drawImg
+	r.canvImg.Refresh()
 	center := r.m.getPosFromLatLon(r.m.Lat, r.m.Lon, r.m.Zoom)
 	zoom := r.m.Zoom
 	for y := float32(0); y < size.Height+float32(tileSize); y += float32(tileSize) {
 		for x := float32(0); x < size.Width+float32(tileSize); x += float32(tileSize) {
 			r.m.runner.RunAsync(func(ctx context.Context) {
-				r.fill(ctx, tileSize, size, img, center, zoom, x, y)
+				r.fill(ctx, tileSize, size, r.drawImg, center, zoom, x, y)
 			})
 		}
 	}
 }
 
-func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, img *image.RGBA, center fyne.Position, zoom int, x, y float32) {
+func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, drawImg draw.Image, center fyne.Position, zoom int, x, y float32) {
 	start := fyne.Position{
 		X: center.X - size.Width/2,
 		Y: center.Y - size.Height/2,
@@ -204,8 +226,8 @@ func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, im
 		return
 	}
 	fyne.DoAndWait(func() {
-		draw.Draw(img, bounds, tile, sp, draw.Over)
-		r.img.Refresh()
+		draw.Draw(drawImg, bounds, tile, sp, draw.Over)
+		r.canvImg.Refresh()
 	})
 }
 
