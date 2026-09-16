@@ -7,12 +7,32 @@ import (
 	"image/draw"
 	"log"
 	"math"
+	"net"
+	"net/http"
 	"sync"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+)
+
+var (
+	mapHttpClient = &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout: 3 * time.Second,
+			}).DialContext,
+			TLSHandshakeTimeout:    3 * time.Second,
+			MaxIdleConns:           10,
+			IdleConnTimeout:        65 * time.Second,
+			ResponseHeaderTimeout:  5 * time.Second,
+			ExpectContinueTimeout:  1 * time.Second,
+			MaxResponseHeaderBytes: 1 << 20,
+		},
+	}
 )
 
 var _ fyne.Widget = (*Map)(nil)
@@ -31,10 +51,17 @@ type Map struct {
 	draggedY  float32
 }
 
+type MapOption func(*Map)
+
 type MapSource interface {
 	TileSize() int
 	GetTile(ctx context.Context, x, y, zoom int) (image.Image, error)
+	AttributionHidden() bool
+	AttributionLabel() string
+	AttributionURL() string
 }
+
+type MapSourceOption func(MapSource)
 
 func NewMap(source MapSource) *Map {
 	m := &Map{

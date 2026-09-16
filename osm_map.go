@@ -12,19 +12,52 @@ import (
 var _ MapSource = (*OsmMapSource)(nil)
 
 type OsmMapSource struct {
-	address string
+	httpClient        *http.Client
+	tileSource        string
+	userAgent         string
+	attributionHidden bool
+	attributionLabel  string
+	attributionURL    string
 }
 
-func NewOsmMapSource() *OsmMapSource {
-	return NewOsmMapSourceWithAddress("")
-}
-
-func NewOsmMapSourceWithAddress(address string) *OsmMapSource {
-	if address == "" {
-		address = "https://tile.openstreetmap.org/%d/%d/%d.png"
+func OsmMapSourceOptionWithHttpClient(httpClient *http.Client) MapSourceOption {
+	return func(s MapSource) {
+		s.(*OsmMapSource).httpClient = httpClient
 	}
+}
+
+func OsmMapSourceOptionWithTileSource(tileSource string) MapSourceOption {
+	return func(s MapSource) {
+		s.(*OsmMapSource).tileSource = tileSource
+	}
+}
+
+func OsmMapSourceOptionWithUserAgent(userAgent string) MapSourceOption {
+	return func(s MapSource) {
+		s.(*OsmMapSource).userAgent = userAgent
+	}
+}
+
+func OsmMapSourceOptionWithAttribution(enable bool, label, _url string) MapSourceOption {
+	return func(s MapSource) {
+		ms := s.(*OsmMapSource)
+		ms.attributionHidden = !enable
+		ms.attributionLabel = label
+		ms.attributionURL = _url
+	}
+}
+
+func NewOsmMapSource(opts ...MapSourceOption) *OsmMapSource {
 	s := &OsmMapSource{
-		address: address,
+		httpClient:        mapHttpClient,
+		tileSource:        "https://tile.openstreetmap.org/%d/%d/%d.png",
+		userAgent:         "github.com/orkunkaraduman/fynekit.Map/1.0",
+		attributionHidden: false,
+		attributionLabel:  "OpenStreetMap",
+		attributionURL:    "https://openstreetmap.org",
+	}
+	for _, opt := range opts {
+		opt(s)
 	}
 	return s
 }
@@ -34,12 +67,12 @@ func (s *OsmMapSource) TileSize() int {
 }
 
 func (s *OsmMapSource) GetTile(ctx context.Context, x, y, zoom int) (tile image.Image, err error) {
-	u := fmt.Sprintf(s.address, zoom, x, y)
+	u := fmt.Sprintf(s.tileSource, zoom, x, y)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "github.com/orkunkaraduman/fynekit.Map/1.0")
+	req.Header.Set("User-Agent", s.userAgent)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -59,4 +92,16 @@ func (s *OsmMapSource) GetTile(ctx context.Context, x, y, zoom int) (tile image.
 		return
 	}
 	return
+}
+
+func (s *OsmMapSource) AttributionHidden() bool {
+	return s.attributionHidden
+}
+
+func (s *OsmMapSource) AttributionLabel() string {
+	return s.attributionLabel
+}
+
+func (s *OsmMapSource) AttributionURL() string {
+	return s.attributionURL
 }
