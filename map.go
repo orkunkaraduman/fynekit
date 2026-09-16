@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"image"
-	"image/color"
 	"image/draw"
 	"log"
 	"math"
@@ -12,6 +11,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -118,7 +118,8 @@ func (r *mapRenderer) Refresh() {
 	bounds := image.Rect(0, 0,
 		int(math.Round(float64(size.Width))), int(math.Round(float64(size.Height))))
 	img := image.NewRGBA(bounds)
-	draw.Draw(img, bounds, image.NewUniform(color.Gray{Y: 0xc0}), image.Point{}, draw.Over)
+	draw.Draw(img, bounds,
+		image.NewUniform(theme.ColorForWidget(theme.ColorNameDisabled, r.m)), image.Point{}, draw.Over)
 	r.img.Image = img
 	r.img.Refresh()
 	center := r.m.getCenterPos()
@@ -134,7 +135,7 @@ func (r *mapRenderer) Refresh() {
 
 func (r *mapRenderer) getEmptyImage() image.Image {
 	img := image.NewRGBA(image.Rect(0, 0, 1, 1))
-	img.Set(0, 0, color.Gray{Y: 0xc0})
+	img.Set(0, 0, theme.ColorForWidget(theme.ColorNameDisabled, r.m))
 	return img
 }
 
