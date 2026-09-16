@@ -100,6 +100,7 @@ func (r *mapRenderer) Destroy() {
 
 func (r *mapRenderer) Layout(s fyne.Size) {
 	r.img.Resize(s)
+	r.m.Refresh()
 }
 
 func (r *mapRenderer) MinSize() fyne.Size {
@@ -114,14 +115,17 @@ func (r *mapRenderer) Objects() []fyne.CanvasObject {
 func (r *mapRenderer) Refresh() {
 	tileSize := r.m.source.TileSize()
 	size := r.img.Size()
-	img := image.NewRGBA(image.Rect(0, 0,
-		int(math.Round(float64(size.Width))), int(math.Round(float64(size.Height)))))
+	bounds := image.Rect(0, 0,
+		int(math.Round(float64(size.Width))), int(math.Round(float64(size.Height))))
+	img := image.NewRGBA(bounds)
+	draw.Draw(img, bounds, image.NewUniform(color.Gray{Y: 0xc0}), image.Point{}, draw.Over)
 	r.img.Image = img
 	r.img.Refresh()
 	center := r.m.getCenterPos()
 	zoom := r.m.Zoom
-	for y := float32(0); y < size.Height; y += float32(tileSize) {
-		for x := float32(0); y < size.Width; x += float32(tileSize) {
+	for y := float32(0); y < size.Height+float32(tileSize); y += float32(tileSize) {
+		for x := float32(0); x < size.Width+float32(tileSize); x += float32(tileSize) {
+			fmt.Println(x, y, size)
 			r.m.runner.RunAsync(func(ctx context.Context) {
 				r.fill(ctx, tileSize, size, img, center, zoom, x, y)
 			})
@@ -130,7 +134,9 @@ func (r *mapRenderer) Refresh() {
 }
 
 func (r *mapRenderer) getEmptyImage() image.Image {
-	return image.NewUniform(color.Gray{Y: 0xc0})
+	img := image.NewRGBA(image.Rect(0, 0, 1, 1))
+	img.Set(0, 0, color.Gray{Y: 0xc0})
+	return img
 }
 
 func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, img *image.RGBA, center fyne.Position, zoom int, x, y float32) {
@@ -146,6 +152,10 @@ func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, im
 		X: float32(math.Floor(float64(current.X) / float64(tileSize))),
 		Y: float32(math.Floor(float64(current.Y) / float64(tileSize))),
 	}
+	/*floor = fyne.Position{
+		X: float32(math.Trunc(float64(current.X) / float64(tileSize))),
+		Y: float32(math.Trunc(float64(current.Y) / float64(tileSize))),
+	}*/
 	trunc := fyne.Position{
 		X: floor.X * float32(tileSize),
 		Y: floor.Y * float32(tileSize),
@@ -154,23 +164,30 @@ func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, im
 		X: current.X - trunc.X,
 		Y: current.Y - trunc.Y,
 	}
+	_ = rem
 	bounds := image.Rectangle{
 		Min: image.Point{X: int(trunc.X - start.X), Y: int(trunc.Y - start.Y)},
 		Max: image.Point{X: int(trunc.X-start.X) + tileSize, Y: int(trunc.Y-start.Y) + tileSize},
 	}
+	var sp image.Point
 	if bounds.Min.X < 0 {
+		sp.X = -bounds.Min.X
 		bounds.Min.X = 0
 	}
 	if bounds.Min.Y < 0 {
+		sp.Y = -bounds.Min.Y
 		bounds.Min.Y = 0
 	}
-	if bounds.Max.X > tileSize {
-		bounds.Max.X = tileSize
+	if v := int(math.Round(float64(size.Width))); bounds.Max.X > v {
+		bounds.Max.X = v
 	}
-	if bounds.Max.Y > tileSize {
-		bounds.Max.Y = tileSize
+	if v := int(math.Round(float64(size.Height))); bounds.Max.Y > v {
+		bounds.Max.Y = v
 	}
 	if s := bounds.Size(); s.X <= 0 || s.Y <= 0 {
+		return
+	}
+	if v := float32(r.m.worldSize() / tileSize); !(0 <= floor.X && floor.X < v) || !(0 <= floor.Y && floor.Y < v) {
 		return
 	}
 	tile, err := r.m.cache.GetTile(ctx, int(floor.X), int(floor.Y), zoom)
@@ -179,7 +196,10 @@ func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, im
 		log.Println(err)
 		return
 	}
-	draw.Draw(img, img.Bounds(), tile, image.Point{X: int(rem.X), Y: int(rem.Y)}, draw.Src)
+	fyne.DoAndWait(func() {
+		draw.Draw(img, bounds, tile, sp, draw.Over)
+		r.img.Refresh()
+	})
 }
 
 type mapCache struct {

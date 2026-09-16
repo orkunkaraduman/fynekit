@@ -39,13 +39,14 @@ func (s *OsmMapSource) GetTile(ctx context.Context, x, y, zoom int) (tile image.
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("User-Agent", "github.com/orkunkaraduman/fynekit.Map/1.0")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status code %d", resp.StatusCode)
+		return nil, fmt.Errorf("invalid status code %d", resp.StatusCode)
 	}
 	tile, err = png.Decode(resp.Body)
 	if err != nil {
