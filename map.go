@@ -60,6 +60,12 @@ func (m *Map) SetZoom(zoom int) {
 	m.Refresh()
 }
 
+func (m *Map) getEmptyImage() image.Image {
+	img := image.NewRGBA(image.Rect(0, 0, 1, 1))
+	img.Set(0, 0, theme.ColorForWidget(theme.ColorNameDisabled, m))
+	return img
+}
+
 func (m *Map) worldSize() int {
 	return m.source.TileSize() * (1 << m.Zoom)
 }
@@ -73,6 +79,14 @@ func (m *Map) getPosFromLatLon(lat, lon float64) fyne.Position {
 		X: float32(x),
 		Y: float32(y),
 	}
+}
+
+func (m *Map) getLatLonFromPos(pos fyne.Position) (lat float64, lon float64) {
+	n := float64(m.worldSize())
+	lon = float64(pos.X)/n*360.0 - 180.0
+	latRad := math.Atan(math.Sinh(math.Pi * (1.0 - 2.0*float64(pos.Y)/n)))
+	lat = latRad * 180.0 / math.Pi
+	return
 }
 
 func (m *Map) getCenterPos() fyne.Position {
@@ -90,7 +104,7 @@ func newMapRenderer(m *Map) *mapRenderer {
 	r := &mapRenderer{
 		m: m,
 	}
-	r.img = canvas.NewImageFromImage(r.getEmptyImage())
+	r.img = canvas.NewImageFromImage(m.getEmptyImage())
 	r.Refresh()
 	return r
 }
@@ -101,6 +115,7 @@ func (r *mapRenderer) Destroy() {
 func (r *mapRenderer) Layout(s fyne.Size) {
 	r.img.Resize(s)
 	r.m.Refresh()
+	//r.img.Refresh()
 }
 
 func (r *mapRenderer) MinSize() fyne.Size {
@@ -131,12 +146,6 @@ func (r *mapRenderer) Refresh() {
 			})
 		}
 	}
-}
-
-func (r *mapRenderer) getEmptyImage() image.Image {
-	img := image.NewRGBA(image.Rect(0, 0, 1, 1))
-	img.Set(0, 0, theme.ColorForWidget(theme.ColorNameDisabled, r.m))
-	return img
 }
 
 func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, img *image.RGBA, center fyne.Position, zoom int, x, y float32) {
