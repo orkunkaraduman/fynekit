@@ -47,6 +47,7 @@ type Map struct {
 	source MapSource
 	cache  *mapCache
 	runner *Runner
+	scale  float32
 
 	dragging bool
 	draggedX float32
@@ -65,13 +66,23 @@ type MapSource interface {
 
 type MapSourceOption func(MapSource)
 
-func NewMap(source MapSource) *Map {
+func MapOptionWithScale(scale float32) MapOption {
+	return func(m *Map) {
+		m.scale = scale
+	}
+}
+
+func NewMap(source MapSource, opts ...MapOption) *Map {
 	m := &Map{
 		source: source,
 		cache:  newMapCache(source),
 		runner: NewRunner(),
+		scale:  1.0,
 	}
 	m.ExtendBaseWidget(m)
+	for _, opt := range opts {
+		opt(m)
+	}
 	return m
 }
 
@@ -140,6 +151,8 @@ func (m *Map) ZoomOut() {
 }
 
 func (m *Map) Dragged(ev *fyne.DragEvent) {
+	ev.Dragged.DX /= m.scale
+	ev.Dragged.DY /= m.scale
 	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
 	pos.X -= ev.Dragged.DX
 	pos.Y -= ev.Dragged.DY
@@ -245,6 +258,8 @@ func (r *mapRenderer) Objects() []fyne.CanvasObject {
 func (r *mapRenderer) Refresh() {
 	tileSize := r.m.source.TileSize()
 	size := r.canvImg.Size()
+	size.Width /= r.m.scale
+	size.Height /= r.m.scale
 	bounds := image.Rect(0, 0,
 		int(math.Round(float64(size.Width))), int(math.Round(float64(size.Height))))
 	if r.m.dragging {
