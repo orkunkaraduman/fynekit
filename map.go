@@ -359,9 +359,9 @@ type mapCache struct {
 func newMapCache(source MapSource) *mapCache {
 	c := &mapCache{
 		source: source,
-		cache:  make(map[string]image.Image),
 		nl:     NewNamedlock(),
 	}
+	c.Invalidate()
 	return c
 }
 
@@ -387,6 +387,6 @@ func (c *mapCache) GetTile(ctx context.Context, x, y, zoom int) (tile image.Imag
 
 func (c *mapCache) Invalidate() {
 	c.cacheMu.Lock()
-	c.cache = make(map[string]image.Image)
+	c.cache = make(map[string]image.Image, 64)
 	c.cacheMu.Unlock()
 }
