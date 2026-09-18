@@ -46,7 +46,7 @@ type Map struct {
 	Zoom     int
 	Scale    float32
 	Overlays []MapOverlay
-	Points   []MapPoint
+	Circles  []MapCircle
 	Lines    []MapLine
 
 	source MapSource
@@ -215,18 +215,19 @@ type MapOverlay struct {
 	Image    image.Image
 }
 
-type MapPoint struct {
-	Lat, Lon float64
-	Color    color.Color
-	Radius   int
-	Filled   bool
+type MapCircle struct {
+	Lat, Lon  float64
+	Color     color.Color
+	Filled    bool
+	Radius    int
+	Thickness int
 }
 
 type MapLine struct {
 	Lat1, Lon1 float64
 	Lat2, Lon2 float64
-	Color      color.Color
 	Width      int
+	Color      color.Color
 }
 
 var _ fyne.WidgetRenderer = (*mapRenderer)(nil)
@@ -292,20 +293,20 @@ func (r *mapRenderer) Refresh() {
 			Y: int(math.Round(float64(size.Height))),
 		},
 	}
+	drawImg := image.NewRGBA(bounds)
 	if r.m.dragging {
-		img := image.NewRGBA(bounds)
-		draw.Draw(img, bounds,
+		draw.Draw(drawImg, bounds,
 			r.m.getEmptyUniformImage(), image.Point{}, draw.Over)
-		draw.Draw(img, bounds,
+		draw.Draw(drawImg, bounds,
 			r.drawImg, image.Point{X: int(r.m.draggedX), Y: int(r.m.draggedY)}, draw.Over)
-		r.canvImg.Image = img
+		r.canvImg.Image = drawImg
 		r.canvImg.Refresh()
 		return
 	}
-	r.drawImg = image.NewRGBA(bounds)
-	draw.Draw(r.drawImg, bounds,
+	r.drawImg = drawImg
+	draw.Draw(drawImg, bounds,
 		r.m.getEmptyUniformImage(), image.Point{}, draw.Over)
-	r.canvImg.Image = r.drawImg
+	r.canvImg.Image = drawImg
 	r.canvImg.Refresh()
 	center := r.m.getPosFromLatLon(r.m.Lat, r.m.Lon, r.m.Zoom)
 	zoom := r.m.Zoom
@@ -315,7 +316,7 @@ func (r *mapRenderer) Refresh() {
 			wg.Add(1)
 			r.m.runner.RunAsync(func(ctx context.Context) {
 				defer wg.Done()
-				r.drawTile(ctx, tileSize, size, r.drawImg, center, zoom, x, y)
+				r.drawTile(ctx, tileSize, size, drawImg, center, zoom, x, y)
 			})
 		}
 	}
@@ -323,14 +324,31 @@ func (r *mapRenderer) Refresh() {
 	for i, overlay := range r.m.Overlays {
 		overlays[i] = overlay
 	}
+	circles := make([]MapCircle, len(r.m.Circles))
+	for i, circle := range r.m.Circles {
+		circles[i] = circle
+	}
+	lines := make([]MapLine, len(r.m.Lines))
+	for i, line := range r.m.Lines {
+		lines[i] = line
+	}
 	r.m.runner.RunAsync(func(ctx context.Context) {
 		wg.Wait()
-		r.drawOverlays(ctx, size, r.drawImg, center, zoom, overlays)
+		overlaysImg := r.drawOverlays(ctx, size, drawImg, center, zoom, overlays)
+		circlesImg := r.drawCircles(ctx, size, drawImg, center, zoom, circles)
+		fyne.DoAndWait(func() {
+			if r.canvImg.Image == drawImg {
+				draw.Draw(drawImg, drawImg.Bounds(), overlaysImg, image.Point{}, draw.Over)
+				draw.Draw(drawImg, drawImg.Bounds(), circlesImg, image.Point{}, draw.Over)
+				r.canvImg.Refresh()
+			}
+		})
 	})
 }
 
 func (r *mapRenderer) drawTile(ctx context.Context, tileSize int, size fyne.Size, drawImg draw.Image, center fyne.Position, zoom int, x, y float32) {
-	szMax := drawImg.Bounds().Max
+	bMin := drawImg.Bounds().Min
+	bMax := drawImg.Bounds().Max
 	start := fyne.Position{
 		X: center.X - size.Width/2,
 		Y: center.Y - size.Height/2,
@@ -352,19 +370,19 @@ func (r *mapRenderer) drawTile(ctx context.Context, tileSize int, size fyne.Size
 		Max: image.Point{X: int(trunc.X-start.X) + tileSize, Y: int(trunc.Y-start.Y) + tileSize},
 	}
 	var sp image.Point
-	if bounds.Min.X < 0 {
-		sp.X += -bounds.Min.X
-		bounds.Min.X = 0
+	if bounds.Min.X < bMin.X {
+		sp.X += bMin.X - bounds.Min.X
+		bounds.Min.X = bMin.X
 	}
-	if bounds.Min.Y < 0 {
-		sp.Y += -bounds.Min.Y
-		bounds.Min.Y = 0
+	if bounds.Min.Y < bMin.Y {
+		sp.Y += bMin.Y - bounds.Min.Y
+		bounds.Min.Y = bMin.Y
 	}
-	if bounds.Max.X > szMax.X {
-		bounds.Max.X = szMax.X
+	if bounds.Max.X > bMax.X {
+		bounds.Max.X = bMax.X
 	}
-	if bounds.Max.Y > szMax.Y {
-		bounds.Max.Y = szMax.Y
+	if bounds.Max.Y > bMax.Y {
+		bounds.Max.Y = bMax.Y
 	}
 	if s := bounds.Size(); s.X <= 0 || s.Y <= 0 {
 		return
@@ -385,16 +403,17 @@ func (r *mapRenderer) drawTile(ctx context.Context, tileSize int, size fyne.Size
 	})
 }
 
-func (r *mapRenderer) drawOverlays(ctx context.Context, size fyne.Size, drawImg draw.Image, center fyne.Position, zoom int, overlays []MapOverlay) {
+func (r *mapRenderer) drawOverlays(ctx context.Context, size fyne.Size, drawImg draw.Image, center fyne.Position, zoom int, overlays []MapOverlay) image.Image {
 	img := image.NewRGBA(drawImg.Bounds())
-	szMax := drawImg.Bounds().Max
+	bMin := drawImg.Bounds().Min
+	bMax := drawImg.Bounds().Max
 	start := fyne.Position{
 		X: center.X - size.Width/2,
 		Y: center.Y - size.Height/2,
 	}
 	for _, overlay := range overlays {
 		if ctx.Err() != nil {
-			return
+			return img
 		}
 		overlaySz := overlay.Image.Bounds().Size()
 		current := r.m.getPosFromLatLon(overlay.Lat, overlay.Lon, zoom)
@@ -409,34 +428,46 @@ func (r *mapRenderer) drawOverlays(ctx context.Context, size fyne.Size, drawImg 
 			},
 		}
 		sp := overlay.Image.Bounds().Min
-		if bounds.Min.X < 0 {
-			sp.X += -bounds.Min.X
-			bounds.Min.X = 0
+		if bounds.Min.X < bMin.X {
+			sp.X += bMin.X - bounds.Min.X
+			bounds.Min.X = bMin.X
 		}
-		if bounds.Min.Y < 0 {
-			sp.Y += -bounds.Min.Y
-			bounds.Min.Y = 0
+		if bounds.Min.Y < bMin.Y {
+			sp.Y += bMin.Y - bounds.Min.Y
+			bounds.Min.Y = bMin.Y
 		}
-		if bounds.Max.X > szMax.X {
-			bounds.Max.X = szMax.X
+		if bounds.Max.X > bMax.X {
+			bounds.Max.X = bMax.X
 		}
-		if bounds.Max.Y > szMax.Y {
-			bounds.Max.Y = szMax.Y
+		if bounds.Max.Y > bMax.Y {
+			bounds.Max.Y = bMax.Y
 		}
 		if s := bounds.Size(); s.X <= 0 || s.Y <= 0 {
 			continue
 		}
 		draw.Draw(img, bounds, overlay.Image, sp, draw.Over)
 	}
-	if ctx.Err() != nil {
-		return
+	return img
+}
+
+func (r *mapRenderer) drawCircles(ctx context.Context, size fyne.Size, drawImg draw.Image, center fyne.Position, zoom int, circles []MapCircle) image.Image {
+	img := image.NewRGBA(drawImg.Bounds())
+	start := fyne.Position{
+		X: center.X - size.Width/2,
+		Y: center.Y - size.Height/2,
 	}
-	fyne.DoAndWait(func() {
-		draw.Draw(drawImg, drawImg.Bounds(), img, image.Point{}, draw.Over)
-		if r.canvImg.Image == drawImg {
-			r.canvImg.Refresh()
+	for _, circle := range circles {
+		if ctx.Err() != nil {
+			return img
 		}
-	})
+		current := r.m.getPosFromLatLon(circle.Lat, circle.Lon, zoom)
+		drawCircle(img,
+			int(current.X-start.X), int(current.Y-start.Y),
+			circle.Radius, circle.Thickness,
+			circle.Color, circle.Filled,
+		)
+	}
+	return img
 }
 
 type mapCache struct {
