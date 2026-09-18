@@ -33,7 +33,7 @@ func (v *View) SetMinSize(size fyne.Size) {
 
 func (v *View) Release() {
 	defer v.AttachToItem.Release()
-	Walk(func(o fyne.CanvasObject) bool {
+	Walk(v.content, func(o fyne.CanvasObject) bool {
 		if obj, ok := o.(interface {
 			fyne.Widget
 			Release()
@@ -48,7 +48,7 @@ func (v *View) Release() {
 			obj.Unbind()
 		}
 		return true
-	}, v.content)
+	})
 }
 
 var _ fyne.WidgetRenderer = (*viewRenderer)(nil)
