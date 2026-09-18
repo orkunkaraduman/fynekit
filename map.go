@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"log"
 	"math"
 	"net"
 	"net/http"
@@ -393,7 +394,7 @@ func (r *mapRenderer) drawTile(ctx context.Context, tileSize int, size fyne.Size
 	}
 	tile, err := r.m.cache.GetTile(ctx, int(floor.X), int(floor.Y), zoom)
 	if err != nil {
-		fyne.LogError("Unable to get tile from cache.", err)
+		log.Printf("unable to get tile: %v", err)
 		return
 	}
 	if ctx.Err() != nil {
