@@ -41,9 +41,9 @@ var _ fyne.Widget = (*Map)(nil)
 
 type Map struct {
 	widget.BaseWidget
-	Lat, Lon float64
-	Zoom     int
-	Scale    float32
+	Coord MapCoordinate
+	Zoom  int
+	Scale float32
 
 	source MapSource
 	cache  *mapCache
@@ -99,36 +99,41 @@ func (m *Map) InvalidateCache() {
 	m.Refresh()
 }
 
+func (m *Map) Pan(coord MapCoordinate) {
+	m.Coord = coord
+	m.Refresh()
+}
+
 func (m *Map) PanToLatLon(lat, lon float64) {
-	m.Lat, m.Lon = lat, lon
+	m.Coord.Lat, m.Coord.Lon = lat, lon
 	m.Refresh()
 }
 
 func (m *Map) PanWest(pix int) {
-	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
+	pos := m.getPosFromLatLon(m.Coord.Lat, m.Coord.Lon, m.Zoom)
 	pos.X -= float32(pix) / m.Scale
-	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
+	m.Coord.Lat, m.Coord.Lon = m.getLatLonFromPos(pos, m.Zoom)
 	m.Refresh()
 }
 
 func (m *Map) PanNorth(pix int) {
-	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
+	pos := m.getPosFromLatLon(m.Coord.Lat, m.Coord.Lon, m.Zoom)
 	pos.Y -= float32(pix) / m.Scale
-	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
+	m.Coord.Lat, m.Coord.Lon = m.getLatLonFromPos(pos, m.Zoom)
 	m.Refresh()
 }
 
 func (m *Map) PanEast(pix int) {
-	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
+	pos := m.getPosFromLatLon(m.Coord.Lat, m.Coord.Lon, m.Zoom)
 	pos.X += float32(pix) / m.Scale
-	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
+	m.Coord.Lat, m.Coord.Lon = m.getLatLonFromPos(pos, m.Zoom)
 	m.Refresh()
 }
 
 func (m *Map) PanSouth(pix int) {
-	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
+	pos := m.getPosFromLatLon(m.Coord.Lat, m.Coord.Lon, m.Zoom)
 	pos.Y += float32(pix) / m.Scale
-	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
+	m.Coord.Lat, m.Coord.Lon = m.getLatLonFromPos(pos, m.Zoom)
 	m.Refresh()
 }
 
@@ -161,10 +166,10 @@ func (m *Map) ZoomOut() {
 func (m *Map) Dragged(ev *fyne.DragEvent) {
 	ev.Dragged.DX /= m.Scale
 	ev.Dragged.DY /= m.Scale
-	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
+	pos := m.getPosFromLatLon(m.Coord.Lat, m.Coord.Lon, m.Zoom)
 	pos.X -= ev.Dragged.DX
 	pos.Y -= ev.Dragged.DY
-	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
+	m.Coord.Lat, m.Coord.Lon = m.getLatLonFromPos(pos, m.Zoom)
 	m.dragging = true
 	m.draggedX -= ev.Dragged.DX
 	m.draggedY -= ev.Dragged.DY
@@ -285,7 +290,7 @@ func (r *mapRenderer) Refresh() {
 		r.m.getEmptyUniformImage(), image.Point{}, draw.Over)
 	r.canvImg.Image = r.drawImg
 	r.canvImg.Refresh()
-	center := r.m.getPosFromLatLon(r.m.Lat, r.m.Lon, r.m.Zoom)
+	center := r.m.getPosFromLatLon(r.m.Coord.Lat, r.m.Coord.Lon, r.m.Zoom)
 	zoom := r.m.Zoom
 	for y := float32(0); y < size.Height+float32(tileSize); y += float32(tileSize) {
 		for x := float32(0); x < size.Width+float32(tileSize); x += float32(tileSize) {
