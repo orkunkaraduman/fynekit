@@ -59,7 +59,7 @@ func drawLine(
 	bounds := img.Bounds()
 
 	dx := absInt(x2 - x1)
-	dy := -absInt(y2 - y1)
+	dy := absInt(y2 - y1)
 
 	sx := -1
 	if x1 < x2 {
@@ -71,7 +71,7 @@ func drawLine(
 		sy = 1
 	}
 
-	err := dx + dy
+	e := dx - dy
 	r := thickness / 2
 
 	for {
@@ -90,15 +90,15 @@ func drawLine(
 			break
 		}
 
-		e2 := 2 * err
+		e2 := e * 2
 
-		if e2 >= dy {
-			err += dy
+		if e2 >= -dy {
+			e -= dy
 			x1 += sx
 		}
 
 		if e2 <= dx {
-			err += dx
+			e += dx
 			y1 += sy
 		}
 	}
