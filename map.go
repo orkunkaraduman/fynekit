@@ -44,6 +44,7 @@ type Map struct {
 	Lat, Lon float64
 	Zoom     int
 	Scale    float32
+	Overlays []MapOverlay
 
 	source MapSource
 	cache  *mapCache
@@ -54,14 +55,19 @@ type Map struct {
 	draggedY float32
 }
 
-type MapOption func(*Map)
-
 type MapSource interface {
 	TileSize() int
 	GetTile(ctx context.Context, x, y, zoom int) (image.Image, error)
 	AttributionHidden() bool
 	AttributionLabel() string
 	AttributionURL() string
+}
+
+type MapOption func(*Map)
+
+type MapOverlay struct {
+	Lat, Lon float64
+	Image    image.Image
 }
 
 type MapSourceOption func(MapSource)
