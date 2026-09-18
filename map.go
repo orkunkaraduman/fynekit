@@ -72,12 +72,6 @@ type MapOverlay struct {
 
 type MapSourceOption func(MapSource)
 
-func MapOptionWithScale(scale float32) MapOption {
-	return func(m *Map) {
-		m.Scale = scale
-	}
-}
-
 func NewMap(source MapSource, opts ...MapOption) *Map {
 	m := &Map{
 		Scale:  1.0,
@@ -274,8 +268,13 @@ func (r *mapRenderer) Refresh() {
 	size := r.canvImg.Size()
 	size.Width /= r.m.Scale
 	size.Height /= r.m.Scale
-	bounds := image.Rect(0, 0,
-		int(math.Round(float64(size.Width))), int(math.Round(float64(size.Height))))
+	bounds := image.Rectangle{
+		Min: image.Point{},
+		Max: image.Point{
+			X: int(math.Round(float64(size.Width))),
+			Y: int(math.Round(float64(size.Height))),
+		},
+	}
 	if r.m.dragging {
 		img := image.NewRGBA(bounds)
 		draw.Draw(img, bounds,
@@ -293,16 +292,28 @@ func (r *mapRenderer) Refresh() {
 	r.canvImg.Refresh()
 	center := r.m.getPosFromLatLon(r.m.Lat, r.m.Lon, r.m.Zoom)
 	zoom := r.m.Zoom
+	var wg sync.WaitGroup
 	for y := float32(0); y < size.Height+float32(tileSize); y += float32(tileSize) {
 		for x := float32(0); x < size.Width+float32(tileSize); x += float32(tileSize) {
+			wg.Add(1)
 			r.m.runner.RunAsync(func(ctx context.Context) {
-				r.fill(ctx, tileSize, size, r.drawImg, center, zoom, x, y)
+				defer wg.Done()
+				r.fillTile(ctx, tileSize, size, r.drawImg, center, zoom, x, y)
 			})
 		}
 	}
+	overlays := make([]MapOverlay, len(r.m.Overlays))
+	for i, overlay := range r.m.Overlays {
+		overlays[i] = overlay
+	}
+	r.m.runner.RunAsync(func(ctx context.Context) {
+		wg.Wait()
+		r.fillOverlays(ctx, size, r.drawImg, center, zoom, overlays)
+	})
 }
 
-func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, drawImg draw.Image, center fyne.Position, zoom int, x, y float32) {
+func (r *mapRenderer) fillTile(ctx context.Context, tileSize int, size fyne.Size, drawImg draw.Image, center fyne.Position, zoom int, x, y float32) {
+	szMax := drawImg.Bounds().Max
 	start := fyne.Position{
 		X: center.X - size.Width/2,
 		Y: center.Y - size.Height/2,
@@ -325,18 +336,18 @@ func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, dr
 	}
 	var sp image.Point
 	if bounds.Min.X < 0 {
-		sp.X = -bounds.Min.X
+		sp.X += -bounds.Min.X
 		bounds.Min.X = 0
 	}
 	if bounds.Min.Y < 0 {
-		sp.Y = -bounds.Min.Y
+		sp.Y += -bounds.Min.Y
 		bounds.Min.Y = 0
 	}
-	if v := int(math.Round(float64(size.Width))); bounds.Max.X > v {
-		bounds.Max.X = v
+	if bounds.Max.X > szMax.X {
+		bounds.Max.X = szMax.X
 	}
-	if v := int(math.Round(float64(size.Height))); bounds.Max.Y > v {
-		bounds.Max.Y = v
+	if bounds.Max.Y > szMax.Y {
+		bounds.Max.Y = szMax.Y
 	}
 	if s := bounds.Size(); s.X <= 0 || s.Y <= 0 {
 		return
@@ -349,9 +360,65 @@ func (r *mapRenderer) fill(ctx context.Context, tileSize int, size fyne.Size, dr
 		fyne.LogError("Unable to get tile from cache.", err)
 		return
 	}
+	if ctx.Err() != nil {
+		return
+	}
 	fyne.DoAndWait(func() {
 		draw.Draw(drawImg, bounds, tile, sp, draw.Over)
-		r.canvImg.Refresh()
+	})
+}
+
+func (r *mapRenderer) fillOverlays(ctx context.Context, size fyne.Size, drawImg draw.Image, center fyne.Position, zoom int, overlays []MapOverlay) {
+	img := image.NewRGBA(drawImg.Bounds())
+	szMax := drawImg.Bounds().Max
+	start := fyne.Position{
+		X: center.X - size.Width/2,
+		Y: center.Y - size.Height/2,
+	}
+	for _, overlay := range overlays {
+		if ctx.Err() != nil {
+			return
+		}
+		overlaySz := overlay.Image.Bounds().Size()
+		current := r.m.getPosFromLatLon(overlay.Lat, overlay.Lon, zoom)
+		bounds := image.Rectangle{
+			Min: image.Point{
+				X: int(current.X - start.X - float32(overlaySz.X/2)),
+				Y: int(current.Y - start.Y - float32(overlaySz.Y/2)),
+			},
+			Max: image.Point{
+				X: int(current.X-start.X-float32(overlaySz.X/2)) + overlaySz.X,
+				Y: int(current.Y-start.Y-float32(overlaySz.Y/2)) + overlaySz.Y,
+			},
+		}
+		sp := overlay.Image.Bounds().Min
+		if bounds.Min.X < 0 {
+			sp.X += -bounds.Min.X
+			bounds.Min.X = 0
+		}
+		if bounds.Min.Y < 0 {
+			sp.Y += -bounds.Min.Y
+			bounds.Min.Y = 0
+		}
+		if bounds.Max.X > szMax.X {
+			bounds.Max.X = szMax.X
+		}
+		if bounds.Max.Y > szMax.Y {
+			bounds.Max.Y = szMax.Y
+		}
+		if s := bounds.Size(); s.X <= 0 || s.Y <= 0 {
+			continue
+		}
+		draw.Draw(img, bounds, overlay.Image, sp, draw.Over)
+	}
+	if ctx.Err() != nil {
+		return
+	}
+	fyne.DoAndWait(func() {
+		draw.Draw(drawImg, drawImg.Bounds(), img, image.Point{}, draw.Over)
+		if r.canvImg.Image == drawImg {
+			r.canvImg.Refresh()
+		}
 	})
 }
 
