@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"image"
+	"image/color"
 	"image/draw"
 	"math"
 	"net"
@@ -45,6 +46,8 @@ type Map struct {
 	Zoom     int
 	Scale    float32
 	Overlays []MapOverlay
+	Points   []MapPoint
+	Lines    []MapLine
 
 	source MapSource
 	cache  *mapCache
@@ -212,6 +215,20 @@ type MapOverlay struct {
 	Image    image.Image
 }
 
+type MapPoint struct {
+	Lat, Lon float64
+	Color    color.Color
+	Radius   int
+	Filled   bool
+}
+
+type MapLine struct {
+	Lat1, Lon1 float64
+	Lat2, Lon2 float64
+	Color      color.Color
+	Width      int
+}
+
 var _ fyne.WidgetRenderer = (*mapRenderer)(nil)
 
 type mapRenderer struct {
@@ -298,7 +315,7 @@ func (r *mapRenderer) Refresh() {
 			wg.Add(1)
 			r.m.runner.RunAsync(func(ctx context.Context) {
 				defer wg.Done()
-				r.fillTile(ctx, tileSize, size, r.drawImg, center, zoom, x, y)
+				r.drawTile(ctx, tileSize, size, r.drawImg, center, zoom, x, y)
 			})
 		}
 	}
@@ -308,11 +325,11 @@ func (r *mapRenderer) Refresh() {
 	}
 	r.m.runner.RunAsync(func(ctx context.Context) {
 		wg.Wait()
-		r.fillOverlays(ctx, size, r.drawImg, center, zoom, overlays)
+		r.drawOverlays(ctx, size, r.drawImg, center, zoom, overlays)
 	})
 }
 
-func (r *mapRenderer) fillTile(ctx context.Context, tileSize int, size fyne.Size, drawImg draw.Image, center fyne.Position, zoom int, x, y float32) {
+func (r *mapRenderer) drawTile(ctx context.Context, tileSize int, size fyne.Size, drawImg draw.Image, center fyne.Position, zoom int, x, y float32) {
 	szMax := drawImg.Bounds().Max
 	start := fyne.Position{
 		X: center.X - size.Width/2,
@@ -368,7 +385,7 @@ func (r *mapRenderer) fillTile(ctx context.Context, tileSize int, size fyne.Size
 	})
 }
 
-func (r *mapRenderer) fillOverlays(ctx context.Context, size fyne.Size, drawImg draw.Image, center fyne.Position, zoom int, overlays []MapOverlay) {
+func (r *mapRenderer) drawOverlays(ctx context.Context, size fyne.Size, drawImg draw.Image, center fyne.Position, zoom int, overlays []MapOverlay) {
 	img := image.NewRGBA(drawImg.Bounds())
 	szMax := drawImg.Bounds().Max
 	start := fyne.Position{
