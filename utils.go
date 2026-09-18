@@ -10,9 +10,14 @@ func drawCircle(
 	img draw.Image,
 	cx, cy, radius, thickness int,
 	c color.Color,
-	filled bool,
 ) {
 	bounds := img.Bounds()
+
+	var filled bool
+	if thickness <= 0 {
+		thickness = 1
+		filled = true
+	}
 
 	outer2 := radius * radius
 
@@ -43,4 +48,65 @@ func drawCircle(
 			}
 		}
 	}
+}
+
+func drawLine(
+	img draw.Image,
+	x1, y1, x2, y2 int,
+	thickness int,
+	c color.Color,
+) {
+	bounds := img.Bounds()
+
+	dx := absInt(x2 - x1)
+	dy := -absInt(y2 - y1)
+
+	sx := -1
+	if x1 < x2 {
+		sx = 1
+	}
+
+	sy := -1
+	if y1 < y2 {
+		sy = 1
+	}
+
+	err := dx + dy
+	r := thickness / 2
+
+	for {
+		for oy := -r; oy <= r; oy++ {
+			for ox := -r; ox <= r; ox++ {
+				x := x1 + ox
+				y := y1 + oy
+
+				if image.Pt(x, y).In(bounds) {
+					img.Set(x, y, c)
+				}
+			}
+		}
+
+		if x1 == x2 && y1 == y2 {
+			break
+		}
+
+		e2 := 2 * err
+
+		if e2 >= dy {
+			err += dy
+			x1 += sx
+		}
+
+		if e2 <= dx {
+			err += dx
+			y1 += sy
+		}
+	}
+}
+
+func absInt(v int) int {
+	if v < 0 {
+		return -v
+	}
+	return v
 }

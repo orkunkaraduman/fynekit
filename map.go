@@ -218,7 +218,6 @@ type MapOverlay struct {
 type MapCircle struct {
 	Lat, Lon  float64
 	Color     color.Color
-	Filled    bool
 	Radius    int
 	Thickness int
 }
@@ -226,8 +225,8 @@ type MapCircle struct {
 type MapLine struct {
 	Lat1, Lon1 float64
 	Lat2, Lon2 float64
-	Width      int
 	Color      color.Color
+	Thickness  int
 }
 
 var _ fyne.WidgetRenderer = (*mapRenderer)(nil)
@@ -336,10 +335,12 @@ func (r *mapRenderer) Refresh() {
 		wg.Wait()
 		overlaysImg := r.drawOverlays(ctx, size, drawImg, center, zoom, overlays)
 		circlesImg := r.drawCircles(ctx, size, drawImg, center, zoom, circles)
+		linesImg := r.drawLines(ctx, size, drawImg, center, zoom, lines)
 		fyne.DoAndWait(func() {
 			if r.canvImg.Image == drawImg {
 				draw.Draw(drawImg, drawImg.Bounds(), overlaysImg, image.Point{}, draw.Over)
 				draw.Draw(drawImg, drawImg.Bounds(), circlesImg, image.Point{}, draw.Over)
+				draw.Draw(drawImg, drawImg.Bounds(), linesImg, image.Point{}, draw.Over)
 				r.canvImg.Refresh()
 			}
 		})
@@ -353,13 +354,13 @@ func (r *mapRenderer) drawTile(ctx context.Context, tileSize int, size fyne.Size
 		X: center.X - size.Width/2,
 		Y: center.Y - size.Height/2,
 	}
-	current := fyne.Position{
+	pos := fyne.Position{
 		X: start.X + x,
 		Y: start.Y + y,
 	}
 	floor := fyne.Position{
-		X: float32(math.Floor(float64(current.X) / float64(tileSize))),
-		Y: float32(math.Floor(float64(current.Y) / float64(tileSize))),
+		X: float32(math.Floor(float64(pos.X) / float64(tileSize))),
+		Y: float32(math.Floor(float64(pos.Y) / float64(tileSize))),
 	}
 	trunc := fyne.Position{
 		X: floor.X * float32(tileSize),
@@ -416,15 +417,15 @@ func (r *mapRenderer) drawOverlays(ctx context.Context, size fyne.Size, drawImg 
 			return img
 		}
 		overlaySz := overlay.Image.Bounds().Size()
-		current := r.m.getPosFromLatLon(overlay.Lat, overlay.Lon, zoom)
+		pos := r.m.getPosFromLatLon(overlay.Lat, overlay.Lon, zoom)
 		bounds := image.Rectangle{
 			Min: image.Point{
-				X: int(current.X - start.X - float32(overlaySz.X/2)),
-				Y: int(current.Y - start.Y - float32(overlaySz.Y/2)),
+				X: int(pos.X - start.X - float32(overlaySz.X/2)),
+				Y: int(pos.Y - start.Y - float32(overlaySz.Y/2)),
 			},
 			Max: image.Point{
-				X: int(current.X-start.X-float32(overlaySz.X/2)) + overlaySz.X,
-				Y: int(current.Y-start.Y-float32(overlaySz.Y/2)) + overlaySz.Y,
+				X: int(pos.X-start.X-float32(overlaySz.X/2)) + overlaySz.X,
+				Y: int(pos.Y-start.Y-float32(overlaySz.Y/2)) + overlaySz.Y,
 			},
 		}
 		sp := overlay.Image.Bounds().Min
@@ -460,11 +461,33 @@ func (r *mapRenderer) drawCircles(ctx context.Context, size fyne.Size, drawImg d
 		if ctx.Err() != nil {
 			return img
 		}
-		current := r.m.getPosFromLatLon(circle.Lat, circle.Lon, zoom)
+		pos := r.m.getPosFromLatLon(circle.Lat, circle.Lon, zoom)
 		drawCircle(img,
-			int(current.X-start.X), int(current.Y-start.Y),
+			int(pos.X-start.X), int(pos.Y-start.Y),
 			circle.Radius, circle.Thickness,
-			circle.Color, circle.Filled,
+			circle.Color,
+		)
+	}
+	return img
+}
+
+func (r *mapRenderer) drawLines(ctx context.Context, size fyne.Size, drawImg draw.Image, center fyne.Position, zoom int, lines []MapLine) image.Image {
+	img := image.NewRGBA(drawImg.Bounds())
+	start := fyne.Position{
+		X: center.X - size.Width/2,
+		Y: center.Y - size.Height/2,
+	}
+	for _, line := range lines {
+		if ctx.Err() != nil {
+			return img
+		}
+		pos1 := r.m.getPosFromLatLon(line.Lat1, line.Lon1, zoom)
+		pos2 := r.m.getPosFromLatLon(line.Lat2, line.Lon2, zoom)
+		drawLine(img,
+			int(pos1.X-start.X), int(pos1.Y-start.Y),
+			int(pos2.X-start.X), int(pos2.Y-start.Y),
+			line.Thickness,
+			line.Color,
 		)
 	}
 	return img
