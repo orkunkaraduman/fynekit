@@ -20,33 +20,6 @@ type OsmMapSource struct {
 	attributionURL    string
 }
 
-func OsmMapSourceOptionWithHttpClient(httpClient *http.Client) MapSourceOption {
-	return func(s MapSource) {
-		s.(*OsmMapSource).httpClient = httpClient
-	}
-}
-
-func OsmMapSourceOptionWithTileSource(tileSource string) MapSourceOption {
-	return func(s MapSource) {
-		s.(*OsmMapSource).tileSource = tileSource
-	}
-}
-
-func OsmMapSourceOptionWithUserAgent(userAgent string) MapSourceOption {
-	return func(s MapSource) {
-		s.(*OsmMapSource).userAgent = userAgent
-	}
-}
-
-func OsmMapSourceOptionWithAttribution(enable bool, label, _url string) MapSourceOption {
-	return func(s MapSource) {
-		ms := s.(*OsmMapSource)
-		ms.attributionHidden = !enable
-		ms.attributionLabel = label
-		ms.attributionURL = _url
-	}
-}
-
 func NewOsmMapSource(opts ...MapSourceOption) *OsmMapSource {
 	s := &OsmMapSource{
 		httpClient:        mapHttpClient,
@@ -104,4 +77,31 @@ func (s *OsmMapSource) AttributionLabel() string {
 
 func (s *OsmMapSource) AttributionURL() string {
 	return s.attributionURL
+}
+
+func OsmMapSourceOptionWithHttpClient(httpClient *http.Client) MapSourceOption {
+	return func(s MapSource) {
+		s.(*OsmMapSource).httpClient = httpClient
+	}
+}
+
+func OsmMapSourceOptionWithTileSource(tileSource string) MapSourceOption {
+	return func(s MapSource) {
+		s.(*OsmMapSource).tileSource = tileSource
+	}
+}
+
+func OsmMapSourceOptionWithUserAgent(userAgent string) MapSourceOption {
+	return func(s MapSource) {
+		s.(*OsmMapSource).userAgent = userAgent
+	}
+}
+
+func OsmMapSourceOptionWithAttribution(enable bool, label, _url string) MapSourceOption {
+	return func(s MapSource) {
+		ms := s.(*OsmMapSource)
+		ms.attributionHidden = !enable
+		ms.attributionLabel = label
+		ms.attributionURL = _url
+	}
 }

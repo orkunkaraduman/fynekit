@@ -55,23 +55,6 @@ type Map struct {
 	draggedY float32
 }
 
-type MapSource interface {
-	TileSize() int
-	GetTile(ctx context.Context, x, y, zoom int) (image.Image, error)
-	AttributionHidden() bool
-	AttributionLabel() string
-	AttributionURL() string
-}
-
-type MapOption func(*Map)
-
-type MapOverlay struct {
-	Lat, Lon float64
-	Image    image.Image
-}
-
-type MapSourceOption func(MapSource)
-
 func NewMap(source MapSource, opts ...MapOption) *Map {
 	m := &Map{
 		Scale:  1.0,
@@ -210,6 +193,23 @@ func (m *Map) getLatLonFromPos(pos fyne.Position, zoom int) (lat float64, lon fl
 	latRad := math.Atan(math.Sinh(math.Pi * (1.0 - 2.0*float64(pos.Y)/n)))
 	lat = latRad * 180.0 / math.Pi
 	return
+}
+
+type MapOption func(*Map)
+
+type MapSource interface {
+	TileSize() int
+	GetTile(ctx context.Context, x, y, zoom int) (image.Image, error)
+	AttributionHidden() bool
+	AttributionLabel() string
+	AttributionURL() string
+}
+
+type MapSourceOption func(MapSource)
+
+type MapOverlay struct {
+	Lat, Lon float64
+	Image    image.Image
 }
 
 var _ fyne.WidgetRenderer = (*mapRenderer)(nil)
