@@ -43,11 +43,11 @@ type Map struct {
 	widget.BaseWidget
 	Lat, Lon float64
 	Zoom     int
+	Scale    float32
 
 	source MapSource
 	cache  *mapCache
 	runner *Runner
-	scale  float32
 
 	dragging bool
 	draggedX float32
@@ -68,16 +68,16 @@ type MapSourceOption func(MapSource)
 
 func MapOptionWithScale(scale float32) MapOption {
 	return func(m *Map) {
-		m.scale = scale
+		m.Scale = scale
 	}
 }
 
 func NewMap(source MapSource, opts ...MapOption) *Map {
 	m := &Map{
+		Scale:  1.0,
 		source: source,
 		cache:  newMapCache(source),
 		runner: NewRunner(),
-		scale:  1.0,
 	}
 	m.ExtendBaseWidget(m)
 	for _, opt := range opts {
@@ -106,34 +106,42 @@ func (m *Map) PanToLatLon(lat, lon float64) {
 
 func (m *Map) PanWest(pix int) {
 	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
-	pos.X -= float32(pix) / m.scale
+	pos.X -= float32(pix) / m.Scale
 	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
 	m.Refresh()
 }
 
 func (m *Map) PanNorth(pix int) {
 	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
-	pos.Y -= float32(pix) / m.scale
+	pos.Y -= float32(pix) / m.Scale
 	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
 	m.Refresh()
 }
 
 func (m *Map) PanEast(pix int) {
 	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
-	pos.X += float32(pix) / m.scale
+	pos.X += float32(pix) / m.Scale
 	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
 	m.Refresh()
 }
 
 func (m *Map) PanSouth(pix int) {
 	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
-	pos.Y += float32(pix) / m.scale
+	pos.Y += float32(pix) / m.Scale
 	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
 	m.Refresh()
 }
 
 func (m *Map) SetZoom(zoom int) {
 	m.Zoom = zoom
+	m.Refresh()
+}
+
+func (m *Map) SetScale(scale float32) {
+	if scale <= 0 {
+		scale = 1.0
+	}
+	m.Scale = scale
 	m.Refresh()
 }
 
@@ -151,8 +159,8 @@ func (m *Map) ZoomOut() {
 }
 
 func (m *Map) Dragged(ev *fyne.DragEvent) {
-	ev.Dragged.DX /= m.scale
-	ev.Dragged.DY /= m.scale
+	ev.Dragged.DX /= m.Scale
+	ev.Dragged.DY /= m.Scale
 	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
 	pos.X -= ev.Dragged.DX
 	pos.Y -= ev.Dragged.DY
@@ -258,8 +266,8 @@ func (r *mapRenderer) Objects() []fyne.CanvasObject {
 func (r *mapRenderer) Refresh() {
 	tileSize := r.m.source.TileSize()
 	size := r.canvImg.Size()
-	size.Width /= r.m.scale
-	size.Height /= r.m.scale
+	size.Width /= r.m.Scale
+	size.Height /= r.m.Scale
 	bounds := image.Rect(0, 0,
 		int(math.Round(float64(size.Width))), int(math.Round(float64(size.Height))))
 	if r.m.dragging {
