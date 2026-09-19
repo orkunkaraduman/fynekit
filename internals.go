@@ -10,8 +10,8 @@ import (
 //go:linkname SetMainGoroutine fyne.io/fyne/v2/internal/async.SetMainGoroutine
 func SetMainGoroutine()
 
-//go:linkname GetRenderer fyne.io/fyne/v2/internal/cache.Renderer
-func GetRenderer(wid fyne.Widget) fyne.WidgetRenderer
+//go:linkname GetWidgetRenderer fyne.io/fyne/v2/internal/cache.Renderer
+func GetWidgetRenderer(wid fyne.Widget) fyne.WidgetRenderer
 
 //go:linkname applyTheme fyne.io/fyne/v2/app.(*settings).applyTheme
 func applyTheme(settings unsafe.Pointer, theme fyne.Theme, variant fyne.ThemeVariant)

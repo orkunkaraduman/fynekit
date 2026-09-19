@@ -18,7 +18,7 @@ func Walk(object fyne.CanvasObject, fn func(fyne.CanvasObject) bool) {
 			Walk(o, fn)
 		}
 	case fyne.Widget:
-		r := GetRenderer(obj)
+		r := GetWidgetRenderer(obj)
 		if r == nil {
 			break
 		}
