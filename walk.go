@@ -6,6 +6,8 @@ import (
 	"fyne.io/fyne/v2"
 )
 
+// Walk walks the object tree rooted at object, calling fn for [fyne.CanvasObject] in the tree, including object.
+// If the function fn returns false, Walk skips all remaining objects.
 func Walk(object fyne.CanvasObject, fn func(fyne.CanvasObject) bool) {
 	if !fn(object) {
 		return
