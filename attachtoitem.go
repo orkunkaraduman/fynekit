@@ -6,7 +6,7 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 )
 
-type AttachToItem struct {
+type attachToItem struct {
 	attached []struct {
 		binding.DataItem
 		binding.DataListener
@@ -14,7 +14,7 @@ type AttachToItem struct {
 	attachedMu sync.Mutex
 }
 
-func (a *AttachToItem) AttachListenerToItem(item binding.DataItem, listener binding.DataListener) {
+func (a *attachToItem) AttachListenerToItem(item binding.DataItem, listener binding.DataListener) {
 	a.attachedMu.Lock()
 	defer a.attachedMu.Unlock()
 	a.attached = append(a.attached, struct {
@@ -24,11 +24,11 @@ func (a *AttachToItem) AttachListenerToItem(item binding.DataItem, listener bind
 	item.AddListener(listener)
 }
 
-func (a *AttachToItem) AttachFunctionToItem(item binding.DataItem, fn func()) {
+func (a *attachToItem) AttachFunctionToItem(item binding.DataItem, fn func()) {
 	a.AttachListenerToItem(item, binding.NewDataListener(fn))
 }
 
-func (a *AttachToItem) Release() {
+func (a *attachToItem) Release() {
 	a.attachedMu.Lock()
 	defer a.attachedMu.Unlock()
 	for _, val := range a.attached {
