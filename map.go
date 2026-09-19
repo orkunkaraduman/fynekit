@@ -498,13 +498,13 @@ type mapCache struct {
 	source  MapSource
 	cache   map[string]image.Image
 	cacheMu sync.RWMutex
-	nl      *Namedlock
+	nl      *namedLock
 }
 
 func newMapCache(source MapSource) *mapCache {
 	c := &mapCache{
 		source: source,
-		nl:     NewNamedlock(),
+		nl:     newNamedLock(),
 	}
 	c.Invalidate()
 	return c

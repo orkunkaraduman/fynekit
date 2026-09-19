@@ -4,12 +4,12 @@ import (
 	"sync"
 )
 
-type Namedlock struct {
+type namedLock struct {
 	mutex   sync.Mutex
-	holders map[string]*_NamedlockHolder
+	holders map[string]*_namedLockHolder
 }
 
-type Namedlocker interface {
+type namedLocker interface {
 	Lock()
 	TryLock() bool
 	Unlock()
@@ -18,49 +18,49 @@ type Namedlocker interface {
 	RUnlock()
 }
 
-func NewNamedlock() *Namedlock {
-	return &Namedlock{
-		holders: make(map[string]*_NamedlockHolder),
+func newNamedLock() *namedLock {
+	return &namedLock{
+		holders: make(map[string]*_namedLockHolder),
 	}
 }
 
-func (n *Namedlock) Locker(name string) Namedlocker {
-	return &_Namedlocker{
-		owner: n,
+func (l *namedLock) Locker(name string) namedLocker {
+	return &_namedLocker{
+		owner: l,
 		name:  name,
 	}
 }
 
-func (n *Namedlock) holder(name string) *_NamedlockHolder {
-	n.mutex.Lock()
-	h := n.holders[name]
-	n.mutex.Unlock()
+func (l *namedLock) holder(name string) *_namedLockHolder {
+	l.mutex.Lock()
+	h := l.holders[name]
+	l.mutex.Unlock()
 	return h
 }
 
-func (n *Namedlock) increase(name string) *_NamedlockHolder {
-	n.mutex.Lock()
-	h := n.holders[name]
+func (l *namedLock) increase(name string) *_namedLockHolder {
+	l.mutex.Lock()
+	h := l.holders[name]
 	if h == nil {
-		h = &_NamedlockHolder{
-			owner: n,
+		h = &_namedLockHolder{
+			owner: l,
 			name:  name,
 		}
-		n.holders[name] = h
+		l.holders[name] = h
 	}
 	h.count++
-	n.mutex.Unlock()
+	l.mutex.Unlock()
 	return h
 }
 
-type _NamedlockHolder struct {
-	owner *Namedlock
+type _namedLockHolder struct {
+	owner *namedLock
 	name  string
 	count int
 	mutex sync.RWMutex
 }
 
-func (h *_NamedlockHolder) decrease() {
+func (h *_namedLockHolder) decrease() {
 	h.owner.mutex.Lock()
 	h.count--
 	if h.count <= 0 {
@@ -69,19 +69,19 @@ func (h *_NamedlockHolder) decrease() {
 	h.owner.mutex.Unlock()
 }
 
-type _Namedlocker struct {
-	owner *Namedlock
+type _namedLocker struct {
+	owner *namedLock
 	name  string
 }
 
-func (l *_Namedlocker) Lock() {
+func (l *_namedLocker) Lock() {
 	// increase count, get holder
 	h := l.owner.increase(l.name)
 	// lock
 	h.mutex.Lock()
 }
 
-func (l *_Namedlocker) TryLock() bool {
+func (l *_namedLocker) TryLock() bool {
 	// increase count, get holder
 	h := l.owner.increase(l.name)
 	// try  lock
@@ -93,7 +93,7 @@ func (l *_Namedlocker) TryLock() bool {
 	return ok
 }
 
-func (l *_Namedlocker) Unlock() {
+func (l *_namedLocker) Unlock() {
 	// get holder
 	h := l.owner.holder(l.name)
 	if h == nil {
@@ -105,14 +105,14 @@ func (l *_Namedlocker) Unlock() {
 	h.decrease()
 }
 
-func (l *_Namedlocker) RLock() {
+func (l *_namedLocker) RLock() {
 	// increase count, get holder
 	h := l.owner.increase(l.name)
 	// rlock
 	h.mutex.RLock()
 }
 
-func (l *_Namedlocker) TryRLock() bool {
+func (l *_namedLocker) TryRLock() bool {
 	// increase count, get holder
 	h := l.owner.increase(l.name)
 	// try  rlock
@@ -124,7 +124,7 @@ func (l *_Namedlocker) TryRLock() bool {
 	return ok
 }
 
-func (l *_Namedlocker) RUnlock() {
+func (l *_namedLocker) RUnlock() {
 	// get holder
 	h := l.owner.holder(l.name)
 	if h == nil {
