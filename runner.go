@@ -5,18 +5,18 @@ import (
 	"sync"
 )
 
-type Runner struct {
+type runner struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 }
 
-func NewRunner() *Runner {
-	return NewRunnerWithContext(nil)
+func newRunner() *runner {
+	return newRunnerWithContext(nil)
 }
 
-func NewRunnerWithContext(ctx context.Context) *Runner {
-	r := &Runner{}
+func newRunnerWithContext(ctx context.Context) *runner {
+	r := &runner{}
 	ctxParent := context.Background()
 	if ctx != nil {
 		ctxParent = ctx
@@ -25,7 +25,7 @@ func NewRunnerWithContext(ctx context.Context) *Runner {
 	return r
 }
 
-func (r *Runner) run(fn func(context.Context), async bool) error {
+func (r *runner) run(fn func(context.Context), async bool) error {
 	r.wg.Add(1)
 	if e := r.ctx.Err(); e != nil {
 		r.wg.Done()
@@ -45,28 +45,28 @@ func (r *Runner) run(fn func(context.Context), async bool) error {
 	return nil
 }
 
-func (r *Runner) Run(fn func(context.Context)) error {
+func (r *runner) Run(fn func(context.Context)) error {
 	return r.run(fn, false)
 }
 
-func (r *Runner) RunAsync(fn func(context.Context)) error {
+func (r *runner) RunAsync(fn func(context.Context)) error {
 	return r.run(fn, true)
 }
 
-func (r *Runner) Ctx() context.Context {
+func (r *runner) Ctx() context.Context {
 	return r.ctx
 }
 
-func (r *Runner) Cancel() {
+func (r *runner) Cancel() {
 	r.cancel()
 }
 
-func (r *Runner) Wait() {
+func (r *runner) Wait() {
 	<-r.ctx.Done()
 	r.wg.Wait()
 }
 
-func (r *Runner) Stop() {
+func (r *runner) Stop() {
 	r.Cancel()
 	r.Wait()
 }

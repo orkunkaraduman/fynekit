@@ -16,7 +16,7 @@ import (
 type App struct {
 	build                      func(*App) fyne.CanvasObject
 	destroy                    func()
-	runner                     *Runner
+	runner                     *runner
 	fyneApp                    fyne.App
 	window                     fyne.Window
 	appStarted                 chan struct{}
@@ -32,7 +32,7 @@ func NewApp(appID, windowTitle string, build func(*App) fyne.CanvasObject, destr
 	a := &App{
 		build:      build,
 		destroy:    destroy,
-		runner:     NewRunner(),
+		runner:     newRunner(),
 		appStarted: make(chan struct{}),
 		appStopped: make(chan struct{}),
 	}
@@ -66,7 +66,7 @@ func NewApp(appID, windowTitle string, build func(*App) fyne.CanvasObject, destr
 	return a
 }
 
-func (a *App) Runner() *Runner {
+func (a *App) Runner() *runner {
 	return a.runner
 }
 

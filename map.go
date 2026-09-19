@@ -52,7 +52,7 @@ type Map struct {
 
 	source MapSource
 	cache  *mapCache
-	runner *Runner
+	runner *runner
 
 	dragging bool
 	draggedX float32
@@ -64,7 +64,7 @@ func NewMap(source MapSource, opts ...MapOption) *Map {
 		Scale:  1.0,
 		source: source,
 		cache:  newMapCache(source),
-		runner: NewRunner(),
+		runner: newRunner(),
 	}
 	m.ExtendBaseWidget(m)
 	for _, opt := range opts {
