@@ -43,12 +43,11 @@ func (s *AutoScrollEntry) FocusGained() {
 
 func setAutoScroll(wid fyne.Widget, scroll *container.Scroll) {
 	pos := wid.Position()
-	pos.X = 0
+	pos.X = scroll.Offset.X
 	pos.Y -= theme.CurrentForWidget(wid).Size(theme.SizeNameInnerPadding)
 	if pos.Y < 0 {
 		pos.Y = 0
 	}
-	scroll.ScrollToTop()
 	scroll.ScrollToBottom()
 	if scroll.Offset.Y > pos.Y {
 		scroll.ScrollToOffset(pos)
