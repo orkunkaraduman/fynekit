@@ -36,18 +36,23 @@ func (s *AutoScrollEntry) FocusGained() {
 	go func() {
 		<-time.After(time.Second / 2)
 		fyne.Do(func() {
-			pos := s.Position()
-			pos.Y -= theme.CurrentForWidget(s).Size(theme.SizeNameInnerPadding)
-			if pos.Y < 0 {
-				pos.Y = 0
-			}
-			s.Scroll.ScrollToTop()
-			s.Scroll.ScrollToBottom()
-			if s.Scroll.Offset.X > pos.X || s.Scroll.Offset.Y > pos.Y {
-				s.Scroll.ScrollToOffset(pos)
-			}
+			setAutoScroll(s, s.Scroll)
 		})
 	}()
+}
+
+func setAutoScroll(wid fyne.Widget, scroll *container.Scroll) {
+	pos := wid.Position()
+	pos.X = 0
+	pos.Y -= theme.CurrentForWidget(wid).Size(theme.SizeNameInnerPadding)
+	if pos.Y < 0 {
+		pos.Y = 0
+	}
+	scroll.ScrollToTop()
+	scroll.ScrollToBottom()
+	if scroll.Offset.Y > pos.Y {
+		scroll.ScrollToOffset(pos)
+	}
 }
 
 /*type AutoScrollBase interface {
@@ -101,7 +106,6 @@ func (s *AutoScroll) DragEnd() {
 }
 
 func (s *AutoScroll) FocusGained() {
-	fmt.Println(1)
 	s.wid.FocusGained()
 	go func() {
 		<-time.After(time.Second / 4)
