@@ -33,7 +33,7 @@ func NewAutoScrollEntryWithData(scroll *container.Scroll, data binding.String) *
 func (s *AutoScrollEntry) FocusGained() {
 	s.Entry.FocusGained()
 	go func() {
-		<-time.After(time.Second / 4)
+		<-time.After(time.Second / 2)
 		fyne.Do(func() {
 			pos := s.Position()
 			s.Scroll.ScrollToTop()
