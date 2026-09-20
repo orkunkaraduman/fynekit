@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -36,6 +37,10 @@ func (s *AutoScrollEntry) FocusGained() {
 		<-time.After(time.Second / 2)
 		fyne.Do(func() {
 			pos := s.Position()
+			pos.Y -= theme.CurrentForWidget(s).Size(theme.SizeNameInnerPadding)
+			if pos.Y < 0 {
+				pos.Y = 0
+			}
 			s.Scroll.ScrollToTop()
 			s.Scroll.ScrollToBottom()
 			if s.Scroll.Offset.X > pos.X || s.Scroll.Offset.Y > pos.Y {
