@@ -27,7 +27,7 @@ func NewFiller(colorName fyne.ThemeColorName) *Filler {
 }
 
 func (f *Filler) CreateRenderer() fyne.WidgetRenderer {
-	return createFillerRenderer(f)
+	return newFillerRenderer(f)
 }
 
 func (f *Filler) SetMinSize(size fyne.Size) {
@@ -41,7 +41,7 @@ type fillerRenderer struct {
 	rect   *canvas.Rectangle
 }
 
-func createFillerRenderer(filler *Filler) *fillerRenderer {
+func newFillerRenderer(filler *Filler) *fillerRenderer {
 	r := &fillerRenderer{
 		filler: filler,
 		rect:   canvas.NewRectangle(color.Transparent),
