@@ -12,10 +12,14 @@ var (
 	currentLocale fyne.Locale
 )
 
+// CurrentLocale returns the currently set locale. If no locale has been set previously,
+// it returns an empty string and the package uses the system locale.
 func CurrentLocale() fyne.Locale {
 	return currentLocale
 }
 
+// SetLocale sets the closest supported locale to the given locale as the current locale.
+// If an empty string is given, the package sets the system locale as the current locale.
 func SetLocale(loc fyne.Locale) {
 	currentLocale = ""
 	if loc != "" {
@@ -29,7 +33,8 @@ func SetLocale(loc fyne.Locale) {
 		log.Printf("failed to load user locales: %v", err)
 		all = []string{"en"}
 	}
-	SetupLang(ClosestSupportedLocale(all).LanguageString())
+	currentLocale = ClosestSupportedLocale(all)
+	SetupLang(currentLocale.LanguageString())
 }
 
 func LocaleFromLang(in string) fyne.Locale {
