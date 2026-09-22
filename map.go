@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"log"
 	"math"
 	"net"
 	"net/http"
@@ -51,7 +52,6 @@ type Map struct {
 	Circles  []MapCircle
 	Lines    []MapLine
 	OnTapped func(lat, lon float64)
-	OnError  func(err error)
 
 	source MapSource
 	cache  *mapCache
@@ -409,9 +409,7 @@ func (r *mapRenderer) drawTile(ctx context.Context, tileSize int, size fyne.Size
 	}
 	tile, err := r.m.cache.GetTile(ctx, int(floor.X), int(floor.Y), zoom)
 	if err != nil {
-		if r.m.OnError != nil {
-			r.m.OnError(fmt.Errorf("unable to get tile: %w", err))
-		}
+		log.Printf("unable to get tile: %v", err)
 		return
 	}
 	if ctx.Err() != nil {

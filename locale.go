@@ -1,8 +1,6 @@
 package fynekit
 
 import (
-	"log"
-
 	"fyne.io/fyne/v2"
 	"github.com/jeandeaual/go-locale"
 	"golang.org/x/text/language"
@@ -32,7 +30,7 @@ func OverrideLocale(loc fyne.Locale) {
 
 	all, err := locale.GetLocales()
 	if err != nil {
-		log.Printf("failed to load user locales: %v", err)
+		fyne.LogError("Failed to load user locales", err)
 		all = []string{"en"}
 	}
 	SetupLang(ClosestSupportedLocale(all).LanguageString())
