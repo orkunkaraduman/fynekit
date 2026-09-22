@@ -9,22 +9,24 @@ import (
 )
 
 var (
-	currentLocale fyne.Locale
+// overridenLocale fyne.Locale
 )
 
-// CurrentLocale returns the currently set locale. If no locale has been set previously,
-// it returns an empty string and the package uses the system locale.
-func CurrentLocale() fyne.Locale {
-	return currentLocale
-}
+/*// OverridenLocale returns the currently overriden locale. If no locale has been overriden previously,
+// it returns an empty string and the package uses its default behavior.
+func OverridenLocale() fyne.Locale {
+	return overridenLocale
+}*/
 
-// SetLocale sets the closest supported locale to the given locale as the current locale.
-// If an empty string is given, the package sets the system locale as the current locale.
-func SetLocale(loc fyne.Locale) {
-	currentLocale = ""
+// OverrideLocale overrides the locale with the closest supported locale
+// to the given locale. If an empty string is given, the package uses its default
+// behavior.
+func OverrideLocale(loc fyne.Locale) {
+	//overridenLocale = ""
 	if loc != "" {
-		currentLocale = ClosestSupportedLocale([]string{loc.String()})
-		SetupLang(currentLocale.LanguageString())
+		/*overridenLocale = ClosestSupportedLocale([]string{loc.String()})
+		SetupLang(overridenLocale.LanguageString())*/
+		SetupLang(ClosestSupportedLocale([]string{loc.String()}).LanguageString())
 		return
 	}
 
@@ -33,8 +35,7 @@ func SetLocale(loc fyne.Locale) {
 		log.Printf("failed to load user locales: %v", err)
 		all = []string{"en"}
 	}
-	currentLocale = ClosestSupportedLocale(all)
-	SetupLang(currentLocale.LanguageString())
+	SetupLang(ClosestSupportedLocale(all).LanguageString())
 }
 
 func LocaleFromLang(in string) fyne.Locale {
