@@ -46,7 +46,7 @@ func (s *OsmMapSource) GetTile(ctx context.Context, x, y, zoom int) (tile image.
 		return nil, err
 	}
 	req.Header.Set("User-Agent", s.userAgent)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

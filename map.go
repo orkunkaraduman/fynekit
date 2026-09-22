@@ -40,6 +40,8 @@ var (
 )
 
 var _ fyne.Widget = (*Map)(nil)
+var _ fyne.Tappable = (*Map)(nil)
+var _ fyne.Draggable = (*Map)(nil)
 
 type Map struct {
 	widget.BaseWidget
@@ -49,6 +51,7 @@ type Map struct {
 	Overlays []MapOverlay
 	Circles  []MapCircle
 	Lines    []MapLine
+	OnTapped func(lat, lon float64)
 
 	source MapSource
 	cache  *mapCache
@@ -143,6 +146,18 @@ func (m *Map) ZoomOut() {
 	}
 	m.Zoom--
 	m.Refresh()
+}
+
+func (m *Map) Tapped(ev *fyne.PointEvent) {
+	if m.OnTapped == nil {
+		return
+	}
+	sz := m.Size()
+	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
+	pos.X += ev.Position.X*m.Scale - sz.Width/2
+	pos.Y += ev.Position.Y*m.Scale - sz.Height/2
+	lat, lon := m.getLatLonFromPos(pos, m.Zoom)
+	m.OnTapped(lat, lon)
 }
 
 func (m *Map) Dragged(ev *fyne.DragEvent) {
