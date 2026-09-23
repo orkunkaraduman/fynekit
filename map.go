@@ -348,10 +348,10 @@ func (r *mapRenderer) Refresh() {
 		lines[i] = line
 	}
 	r.m.runner.RunAsync(func(ctx context.Context) {
-		wg.Wait()
 		overlaysImg := r.drawOverlays(ctx, size, drawImg, center, zoom, overlays)
 		circlesImg := r.drawCircles(ctx, size, drawImg, center, zoom, circles)
 		linesImg := r.drawLines(ctx, size, drawImg, center, zoom, lines)
+		wg.Wait()
 		fyne.DoAndWait(func() {
 			if r.canvImg.Image == drawImg {
 				draw.Draw(drawImg, drawImg.Bounds(), overlaysImg, image.Point{}, draw.Over)
@@ -416,7 +416,10 @@ func (r *mapRenderer) drawTile(ctx context.Context, tileSize int, size fyne.Size
 		return
 	}
 	fyne.DoAndWait(func() {
-		draw.Draw(drawImg, bounds, tile, sp, draw.Over)
+		if r.canvImg.Image == drawImg {
+			draw.Draw(drawImg, bounds, tile, sp, draw.Over)
+			r.canvImg.Refresh()
+		}
 	})
 }
 
