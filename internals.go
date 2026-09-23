@@ -15,18 +15,18 @@ func SetMainGoroutine()
 func GetWidgetRenderer(wid fyne.Widget) fyne.WidgetRenderer
 
 //go:linkname applyTheme fyne.io/fyne/v2/app.(*settings).applyTheme
-func applyTheme(settings unsafe.Pointer, theme fyne.Theme, variant fyne.ThemeVariant)
+func applyTheme(st unsafe.Pointer, th fyne.Theme, variant fyne.ThemeVariant)
 
-func ApplyTheme(settings fyne.Settings, th fyne.Theme, variant fyne.ThemeVariant) {
-	applyTheme(reflect.ValueOf(settings).UnsafePointer(), th, variant)
+func ApplyTheme(st fyne.Settings, th fyne.Theme, variant fyne.ThemeVariant) {
+	applyTheme(reflect.ValueOf(st).UnsafePointer(), th, variant)
 }
 
-func SetTheme(settings fyne.Settings, th fyne.Theme) {
-	ApplyTheme(settings, th, settings.ThemeVariant())
+func SetTheme(st fyne.Settings, th fyne.Theme) {
+	ApplyTheme(st, th, st.ThemeVariant())
 }
 
-func SetThemeVariant(settings fyne.Settings, variant fyne.ThemeVariant) {
-	ApplyTheme(settings, settings.Theme(), variant)
+func SetThemeVariant(st fyne.Settings, variant fyne.ThemeVariant) {
+	ApplyTheme(st, st.Theme(), variant)
 }
 
 //go:linkname SetupLang fyne.io/fyne/v2/lang.setupLang
