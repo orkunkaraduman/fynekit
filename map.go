@@ -154,8 +154,8 @@ func (m *Map) Tapped(ev *fyne.PointEvent) {
 	}
 	sz := m.Size()
 	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
-	pos.X += ev.Position.X*m.Scale - sz.Width/2
-	pos.Y += ev.Position.Y*m.Scale - sz.Height/2
+	pos.X += (ev.Position.X - sz.Width/2) / m.Scale
+	pos.Y += (ev.Position.Y - sz.Height/2) / m.Scale
 	lat, lon := m.getLatLonFromPos(pos, m.Zoom)
 	m.OnTapped(lat, lon)
 }
