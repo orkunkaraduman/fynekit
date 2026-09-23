@@ -43,18 +43,3 @@ func LocaleFromLang(in string) fyne.Locale {
 
 	return LocaleFromTag(t)
 }
-
-func LocaleFromTag(in language.Tag) fyne.Locale {
-	b, s, r := in.Raw()
-	ret := b.String()
-
-	if r.String() != "ZZ" {
-		ret += "-" + r.String()
-
-		if s.String() != "Zzzz" {
-			ret += "-" + s.String()
-		}
-	}
-
-	return fyne.Locale(ret)
-}

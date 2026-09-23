@@ -5,6 +5,7 @@ import (
 	"unsafe"
 
 	"fyne.io/fyne/v2"
+	"golang.org/x/text/language"
 )
 
 //go:linkname SetMainGoroutine fyne.io/fyne/v2/internal/async.SetMainGoroutine
@@ -33,3 +34,6 @@ func SetupLang(lang string)
 
 //go:linkname ClosestSupportedLocale fyne.io/fyne/v2/lang.closestSupportedLocale
 func ClosestSupportedLocale(locs []string) fyne.Locale
+
+//go:linkname LocaleFromTag fyne.io/fyne/v2/lang.localeFromTag
+func LocaleFromTag(in language.Tag) fyne.Locale
