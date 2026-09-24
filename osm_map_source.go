@@ -39,7 +39,7 @@ func (s *OsmMapSource) TileSize() int {
 	return 256
 }
 
-func (s *OsmMapSource) GetTile(ctx context.Context, x, y, zoom int) (tile image.Image, err error) {
+func (s *OsmMapSource) GetTile(ctx context.Context, zoom, x, y int) (tile image.Image, err error) {
 	u := fmt.Sprintf(s.tileSource, zoom, x, y)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {

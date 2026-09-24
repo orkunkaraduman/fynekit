@@ -414,7 +414,7 @@ func (r *mapRenderer) drawTile(ctx context.Context, size fyne.Size, center fyne.
 	if v := float32(r.m.worldSize(zoom) / tileSize); !(0 <= floor.X && floor.X < v) || !(0 <= floor.Y && floor.Y < v) {
 		return
 	}
-	tile, err := r.m.cache.GetTile(ctx, int(floor.X), int(floor.Y), zoom)
+	tile, err := r.m.cache.GetTile(ctx, zoom, int(floor.X), int(floor.Y))
 	if err != nil {
 		log.Printf("unable to get tile: %v", err)
 		return
@@ -538,7 +538,7 @@ func newMapCache(source MapSource) *mapCache {
 	return c
 }
 
-func (c *mapCache) GetTile(ctx context.Context, x, y, zoom int) (tile image.Image, err error) {
+func (c *mapCache) GetTile(ctx context.Context, zoom, x, y int) (tile image.Image, err error) {
 	key := fmt.Sprintf("%d/%d/%d", zoom, x, y)
 	locker := c.nl.Locker(key)
 	locker.Lock()
@@ -547,7 +547,7 @@ func (c *mapCache) GetTile(ctx context.Context, x, y, zoom int) (tile image.Imag
 	tile = c.cache[key]
 	c.cacheMu.RUnlock()
 	if tile == nil {
-		tile, err = c.source.GetTile(ctx, x, y, zoom)
+		tile, err = c.source.GetTile(ctx, zoom, x, y)
 		if err != nil {
 			return
 		}
