@@ -138,6 +138,7 @@ func (a *App) Go(fn func(ctx context.Context) error) (done <-chan error, err err
 		d <- fn(ctx)
 	})
 	if err != nil {
+		d <- err
 		close(d)
 	}
 	return d, err
@@ -151,7 +152,7 @@ func (a *App) Do(fn func()) (done <-chan error, err error) {
 }
 
 func (a *App) DoWhenNoOverlay(fn func()) (done <-chan error, err error) {
-	return a.Go(func(ctx context.Context) error {
+	return a.Go(func(ctx context.Context) (err error) {
 		for finished := false; !finished; {
 			fyne.DoAndWait(func() {
 				if a.window.Canvas().Overlays().Top() != nil {
@@ -165,11 +166,12 @@ func (a *App) DoWhenNoOverlay(fn func()) (done <-chan error, err error) {
 			}
 			select {
 			case <-ctx.Done():
+				err = ctx.Err()
 				finished = true
 			case <-time.After(time.Second / 64):
 			}
 		}
-		return nil
+		return
 	})
 }
 
