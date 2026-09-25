@@ -35,6 +35,10 @@ func NewOsmMapSource(opts ...MapSourceOption) *OsmMapSource {
 	return s
 }
 
+func (s *OsmMapSource) MaxZoom() int {
+	return 18
+}
+
 func (s *OsmMapSource) TileSize() int {
 	return 256
 }

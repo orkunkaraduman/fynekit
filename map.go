@@ -46,13 +46,13 @@ var _ fyne.Scrollable = (*Map)(nil)
 
 type Map struct {
 	widget.BaseWidget
-	Lat, Lon      float64
-	Zoom          int
-	Scale         float32
-	ScrollEnabled bool
-	Overlays      []MapOverlay
-	OnTapped      func(lat, lon float64)
-	OnCompleted   func(img image.Image)
+	Lat, Lon     float64
+	Zoom         int
+	Scale        float32
+	ScrollAction MapScrollAction
+	Overlays     []MapOverlay
+	OnTapped     func(lat, lon float64)
+	OnCompleted  func(img image.Image)
 
 	source      MapSource
 	cache       *mapCache
@@ -139,12 +139,17 @@ func (m *Map) SetScale(scale float32) {
 }
 
 func (m *Map) ZoomIn() {
+	if x := m.source.MaxZoom(); m.Zoom >= x {
+		m.Zoom = x
+		return
+	}
 	m.Zoom++
 	m.Refresh()
 }
 
 func (m *Map) ZoomOut() {
 	if m.Zoom <= 0 {
+		m.Zoom = 0
 		return
 	}
 	m.Zoom--
@@ -184,10 +189,53 @@ func (m *Map) DragEnd() {
 }
 
 func (m *Map) Scrolled(ev *fyne.ScrollEvent) {
-	if !m.ScrollEnabled {
+	switch m.ScrollAction {
+	case MapScrollActionNone:
 		return
+	case MapScrollActionZoomX:
+		fallthrough
+	case MapScrollActionZoomY:
+		if m.ScrollAction == MapScrollActionZoomX {
+			m.Scale += ev.Scrolled.DX / float32(m.source.TileSize())
+		} else {
+			m.Scale -= ev.Scrolled.DY / float32(m.source.TileSize())
+		}
+		switch {
+		case m.Scale < 1:
+			if m.Zoom <= 0 {
+				m.Scale = 1
+				break
+			}
+			m.Zoom -= 1
+			m.Scale = 2
+		case m.Scale >= 2:
+			if m.Zoom >= m.source.MaxZoom() {
+				m.Scale = 2
+				break
+			}
+			m.Zoom += int(math.Log2(float64(m.Scale)))
+			if x := m.source.MaxZoom(); m.Zoom > x {
+				m.Zoom = x
+				m.Scale = 2
+			} else {
+				m.Scale = 1
+			}
+		}
+		m.scrollTimer.Reset(time.Second / 8)
+		go func() {
+			select {
+			case <-time.After(2 * time.Second / 8):
+				return
+			case <-time.After(time.Second / 16):
+			case <-m.scrollTimer.C:
+			}
+			fyne.DoAndWait(func() {
+				m.Refresh()
+			})
+		}()
+		return
+	case MapScrollActionDrag:
 	}
-	m.scrollTimer.Reset(time.Second / 2)
 	ev.Scrolled.DX /= m.Scale
 	ev.Scrolled.DY /= m.Scale
 	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
@@ -198,8 +246,13 @@ func (m *Map) Scrolled(ev *fyne.ScrollEvent) {
 	m.draggedX -= ev.Scrolled.DX
 	m.draggedY -= ev.Scrolled.DY
 	m.Refresh()
+	m.scrollTimer.Reset(time.Second / 4)
 	go func() {
-		<-m.scrollTimer.C
+		select {
+		case <-time.After(2 * time.Second / 4):
+			return
+		case <-m.scrollTimer.C:
+		}
 		fyne.DoAndWait(func() {
 			m.dragging = false
 			m.draggedX = 0
@@ -246,6 +299,7 @@ func (m *Map) getLatLonFromPos(pos fyne.Position, zoom int) (lat float64, lon fl
 type MapOption func(*Map)
 
 type MapSource interface {
+	MaxZoom() int
 	TileSize() int
 	GetTile(ctx context.Context, x, y, zoom int) (image.Image, error)
 	AttributionHidden() bool
@@ -254,6 +308,15 @@ type MapSource interface {
 }
 
 type MapSourceOption func(MapSource)
+
+type MapScrollAction int
+
+const (
+	MapScrollActionNone MapScrollAction = iota
+	MapScrollActionDrag
+	MapScrollActionZoomY
+	MapScrollActionZoomX
+)
 
 type MapOverlay struct {
 	Image  *MapOverlayImage
