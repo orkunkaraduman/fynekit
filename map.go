@@ -45,11 +45,12 @@ var _ fyne.Draggable = (*Map)(nil)
 
 type Map struct {
 	widget.BaseWidget
-	Lat, Lon float64
-	Zoom     int
-	Scale    float32
-	Overlays []MapOverlay
-	OnTapped func(lat, lon float64)
+	Lat, Lon    float64
+	Zoom        int
+	Scale       float32
+	Overlays    []MapOverlay
+	OnTapped    func(lat, lon float64)
+	OnCompleted func(img image.Image)
 
 	source MapSource
 	cache  *mapCache
@@ -253,17 +254,17 @@ var _ fyne.WidgetRenderer = (*mapRenderer)(nil)
 
 type mapRenderer struct {
 	m         *Map
-	canvImg   *canvas.Image
 	drawImg   *image.RGBA
+	canvImg   *canvas.Image
 	copyright *fyne.Container
 }
 
 func newMapRenderer(m *Map) *mapRenderer {
 	r := &mapRenderer{
 		m:       m,
-		canvImg: canvas.NewImageFromImage(m.getEmptyRGBAImage()),
 		drawImg: m.getEmptyRGBAImage(),
 	}
+	r.canvImg = canvas.NewImageFromImage(r.drawImg)
 
 	u, _ := url.Parse(m.source.AttributionURL())
 	link := widget.NewHyperlink(m.source.AttributionLabel(), u)
@@ -362,6 +363,11 @@ func (r *mapRenderer) Refresh() {
 			if ctx.Err() == nil && r.canvImg.Image == drawImg {
 				draw.Draw(drawImg, bounds, overlayDrawImg, image.Point{}, draw.Over)
 				r.canvImg.Refresh()
+				fyne.Do(func() {
+					if r.m.OnCompleted != nil {
+						r.m.OnCompleted(drawImg)
+					}
+				})
 			}
 		})
 	})
