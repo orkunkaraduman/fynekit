@@ -42,19 +42,22 @@ var (
 var _ fyne.Widget = (*Map)(nil)
 var _ fyne.Tappable = (*Map)(nil)
 var _ fyne.Draggable = (*Map)(nil)
+var _ fyne.Scrollable = (*Map)(nil)
 
 type Map struct {
 	widget.BaseWidget
-	Lat, Lon    float64
-	Zoom        int
-	Scale       float32
-	Overlays    []MapOverlay
-	OnTapped    func(lat, lon float64)
-	OnCompleted func(img image.Image)
+	Lat, Lon      float64
+	Zoom          int
+	Scale         float32
+	ScrollEnabled bool
+	Overlays      []MapOverlay
+	OnTapped      func(lat, lon float64)
+	OnCompleted   func(img image.Image)
 
-	source MapSource
-	cache  *mapCache
-	runner *runner
+	source      MapSource
+	cache       *mapCache
+	runner      *runner
+	scrollTimer *time.Timer
 
 	dragging bool
 	draggedX float32
@@ -63,10 +66,11 @@ type Map struct {
 
 func NewMap(source MapSource, opts ...MapOption) *Map {
 	m := &Map{
-		Scale:  1.0,
-		source: source,
-		cache:  newMapCache(source),
-		runner: newRunner(),
+		Scale:       1.0,
+		source:      source,
+		cache:       newMapCache(source),
+		runner:      newRunner(),
+		scrollTimer: time.NewTimer(0),
 	}
 	m.ExtendBaseWidget(m)
 	for _, opt := range opts {
@@ -177,6 +181,32 @@ func (m *Map) DragEnd() {
 	m.draggedX = 0
 	m.draggedY = 0
 	m.Refresh()
+}
+
+func (m *Map) Scrolled(ev *fyne.ScrollEvent) {
+	if !m.ScrollEnabled {
+		return
+	}
+	m.scrollTimer.Reset(time.Second / 2)
+	ev.Scrolled.DX /= m.Scale
+	ev.Scrolled.DY /= m.Scale
+	pos := m.getPosFromLatLon(m.Lat, m.Lon, m.Zoom)
+	pos.X -= ev.Scrolled.DX
+	pos.Y -= ev.Scrolled.DY
+	m.Lat, m.Lon = m.getLatLonFromPos(pos, m.Zoom)
+	m.dragging = true
+	m.draggedX -= ev.Scrolled.DX
+	m.draggedY -= ev.Scrolled.DY
+	m.Refresh()
+	go func() {
+		<-m.scrollTimer.C
+		fyne.DoAndWait(func() {
+			m.dragging = false
+			m.draggedX = 0
+			m.draggedY = 0
+			m.Refresh()
+		})
+	}()
 }
 
 func (m *Map) getEmptyRGBAImage() *image.RGBA {
