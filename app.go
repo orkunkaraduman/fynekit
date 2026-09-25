@@ -203,6 +203,7 @@ func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx conte
 				e = ctx.Err()
 			case e = <-done:
 			}
+			_ = e
 			cancel()
 			fyne.DoAndWait(diag.Dismiss)
 		}()
