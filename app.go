@@ -182,7 +182,6 @@ func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx conte
 		diag.SetOnClosed(cancel)
 		diag.Show()
 		done := a.Go(func(ctx2 context.Context) error {
-			defer cancel()
 			go func() {
 				select {
 				case <-ctx.Done():
@@ -197,13 +196,7 @@ func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx conte
 			return nil
 		})
 		go func() {
-			var e error
-			select {
-			case <-ctx.Done():
-				e = ctx.Err()
-			case e = <-done:
-			}
-			_ = e
+			<-done
 			cancel()
 			fyne.DoAndWait(diag.Dismiss)
 		}()
