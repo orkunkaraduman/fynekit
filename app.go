@@ -66,10 +66,6 @@ func NewApp(appID, windowTitle string, build func(*App) fyne.CanvasObject, destr
 	return a
 }
 
-func (a *App) Runner() *runner {
-	return a.runner
-}
-
 func (a *App) FyneApp() fyne.App {
 	return a.fyneApp
 }
@@ -122,36 +118,35 @@ func (a *App) AddExitedForegroundListener(fn func()) {
 	a.exitedForegroundListeners = append(a.exitedForegroundListeners, fn)
 }
 
-func (a *App) Go(fn func(ctx context.Context) error) (done <-chan error, err error) {
+func (a *App) Go(fn func(ctx context.Context) error) (done <-chan error) {
 	if a.runWasCalled == 0 {
 		panic("App.Run() was not called")
 	}
 	d := make(chan error, 1)
-	err = a.runner.RunAsync(func(ctx context.Context) {
+	err := a.runner.RunAsync(func(ctx context.Context) {
 		defer close(d)
 		select {
 		case <-ctx.Done():
 			d <- ctx.Err()
-			return
 		case <-a.appStarted:
+			d <- fn(ctx)
 		}
-		d <- fn(ctx)
 	})
 	if err != nil {
 		d <- err
 		close(d)
 	}
-	return d, err
+	return d
 }
 
-func (a *App) Do(fn func()) (done <-chan error, err error) {
+func (a *App) Do(fn func()) (done <-chan error) {
 	return a.Go(func(context.Context) error {
 		fyne.DoAndWait(fn)
 		return nil
 	})
 }
 
-func (a *App) DoWhenNoOverlay(fn func()) (done <-chan error, err error) {
+func (a *App) DoWhenNoOverlay(fn func()) (done <-chan error) {
 	return a.Go(func(ctx context.Context) (err error) {
 		for finished := false; !finished; {
 			fyne.DoAndWait(func() {
@@ -186,7 +181,7 @@ func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx conte
 		}
 		diag.SetOnClosed(cancel)
 		diag.Show()
-		if _, e := a.Go(func(ctx2 context.Context) error {
+		done := a.Go(func(ctx2 context.Context) error {
 			defer cancel()
 			go func() {
 				select {
@@ -196,17 +191,21 @@ func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx conte
 				}
 			}()
 			finalize := fn(ctx)
-			fyne.DoAndWait(func() {
-				diag.Dismiss()
-				if finalize != nil {
-					finalize()
-				}
-			})
+			if finalize != nil {
+				fyne.DoAndWait(finalize)
+			}
 			return nil
-		}); e != nil {
-			diag.Dismiss()
+		})
+		go func() {
+			var e error
+			select {
+			case <-ctx.Done():
+				e = ctx.Err()
+			case e = <-done:
+			}
 			cancel()
-		}
+			fyne.DoAndWait(diag.Dismiss)
+		}()
 	})
 }
 
