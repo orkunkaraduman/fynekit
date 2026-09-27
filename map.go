@@ -6,7 +6,6 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"log"
 	"math"
 	"net"
 	"net/http"
@@ -52,7 +51,7 @@ type Map struct {
 	ScrollAction MapScrollAction
 	Overlays     []MapOverlay
 	OnTapped     func(lat, lon float64)
-	OnCompleted  func(img image.Image)
+	OnCompleted  func(img image.Image, errs ...error)
 
 	source      MapSource
 	cache       *mapCache
@@ -381,6 +380,8 @@ func (r *mapRenderer) Refresh() {
 	r.canvImg.Refresh()
 	center := r.m.getPosFromLatLon(r.m.Lat, r.m.Lon, r.m.Zoom)
 	zoom := r.m.Zoom
+	var errs []error
+	var errsMu sync.Mutex
 	var wg sync.WaitGroup
 	for y := float32(0); y < size.Height+float32(tileSize); y += float32(tileSize) {
 		for x := float32(0); x < size.Width+float32(tileSize); x += float32(tileSize) {
@@ -390,7 +391,11 @@ func (r *mapRenderer) Refresh() {
 				if ctx.Err() != nil {
 					return
 				}
-				r.drawTile(ctx, size, center, drawImg, zoom, tileSize, x, y)
+				if e := r.drawTile(ctx, size, center, drawImg, zoom, tileSize, x, y); e != nil {
+					errsMu.Lock()
+					errs = append(errs, e)
+					errsMu.Unlock()
+				}
 			})
 		}
 	}
@@ -401,22 +406,22 @@ func (r *mapRenderer) Refresh() {
 	r.m.runner.RunAsync(func(ctx context.Context) {
 		overlayDrawImg := image.NewRGBA(bounds)
 		for i := range overlays {
-			if ctx.Err() != nil {
+			if e := ctx.Err(); e != nil {
 				return
 			}
 			r.drawOverlay(ctx, size, center, overlayDrawImg, zoom, &overlays[i])
 		}
 		wg.Wait()
-		if ctx.Err() != nil {
+		if e := ctx.Err(); e != nil {
 			return
 		}
 		fyne.DoAndWait(func() {
-			if ctx.Err() == nil && r.canvImg.Image == drawImg {
+			if r.canvImg.Image == drawImg {
 				draw.Draw(drawImg, bounds, overlayDrawImg, image.Point{}, draw.Over)
 				r.canvImg.Refresh()
 				fyne.Do(func() {
 					if r.m.OnCompleted != nil {
-						r.m.OnCompleted(drawImg)
+						r.m.OnCompleted(drawImg, errs...)
 					}
 				})
 			}
@@ -427,7 +432,7 @@ func (r *mapRenderer) Refresh() {
 func (r *mapRenderer) drawTile(ctx context.Context, size fyne.Size, center fyne.Position,
 	drawImg draw.Image, zoom int,
 	tileSize int, x, y float32,
-) {
+) error {
 	bMin := drawImg.Bounds().Min
 	bMax := drawImg.Bounds().Max
 	start := fyne.Position{
@@ -466,25 +471,26 @@ func (r *mapRenderer) drawTile(ctx context.Context, size fyne.Size, center fyne.
 		bounds.Max.Y = bMax.Y
 	}
 	if s := bounds.Size(); s.X <= 0 || s.Y <= 0 {
-		return
+		return nil
 	}
 	if v := float32(r.m.worldSize(zoom) / tileSize); !(0 <= floor.X && floor.X < v) || !(0 <= floor.Y && floor.Y < v) {
-		return
+		return nil
 	}
 	tile, err := r.m.cache.GetTile(ctx, zoom, int(floor.X), int(floor.Y))
 	if err != nil {
-		log.Printf("unable to get tile: %v", err)
-		return
+		err = fmt.Errorf("unable to get tile: %w", err)
+		return err
 	}
-	if ctx.Err() != nil {
-		return
+	if e := ctx.Err(); e != nil {
+		return e
 	}
 	fyne.DoAndWait(func() {
-		if ctx.Err() == nil && r.canvImg.Image == drawImg {
+		if r.canvImg.Image == drawImg {
 			draw.Draw(drawImg, bounds, tile, sp, draw.Over)
 			r.canvImg.Refresh()
 		}
 	})
+	return nil
 }
 
 func (r *mapRenderer) drawOverlay(ctx context.Context, size fyne.Size, center fyne.Position,
