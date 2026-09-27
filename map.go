@@ -190,9 +190,11 @@ func (m *Map) DragEnd() {
 
 func (m *Map) Scrolled(ev *fyne.ScrollEvent) {
 	switch m.ScrollAction {
+	default:
+		fallthrough
 	case MapScrollActionNone:
 		return
-	case MapScrollActionZoomX:
+	/*case MapScrollActionZoomX:
 		fallthrough
 	case MapScrollActionZoomY:
 		if m.ScrollAction == MapScrollActionZoomX {
@@ -233,7 +235,7 @@ func (m *Map) Scrolled(ev *fyne.ScrollEvent) {
 				m.Refresh()
 			})
 		}()
-		return
+		return*/
 	case MapScrollActionDrag:
 	}
 	ev.Scrolled.DX /= m.Scale
@@ -314,8 +316,8 @@ type MapScrollAction int
 const (
 	MapScrollActionNone MapScrollAction = iota
 	MapScrollActionDrag
-	MapScrollActionZoomY
-	MapScrollActionZoomX
+	//MapScrollActionZoomY
+	//MapScrollActionZoomX
 )
 
 type MapOverlay struct {
