@@ -184,7 +184,7 @@ func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx conte
 			)*/
 			activity = widget.NewActivity()
 			diag = dialog.NewCustomWithoutButtons(lang.L("Please wait..."),
-				WrapWithMinSize(activity, fyne.NewSize(s.Width, s.Width), nil),
+				WrapWithMinSize(activity, fyne.NewSize(s.Width, s.Width/2), nil),
 				a.window,
 			)
 			activity.Start()
