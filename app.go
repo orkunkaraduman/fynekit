@@ -184,11 +184,11 @@ func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx conte
 				a.window,
 			)*/
 			activity = widget.NewActivity()
+			activity.Start()
 			diag = dialog.NewCustomWithoutButtons(lang.L("Please wait..."),
 				WrapWithMinSize(activity, fyne.NewSize(s.Width, s.Width/2), nil),
 				a.window,
 			)
-			activity.Start()
 		}
 		diag.SetOnClosed(cancel)
 		diag.Show()
@@ -273,7 +273,7 @@ func (a *App) ShowInputDialog(title, message string, onConfirm func(string), onC
 				),
 				Wrap(NewFiller(""), func(o fyne.CanvasObject) {
 					w := o.(*Filler)
-					w.SetMinSize(fyne.NewSize(0, theme.Size(theme.SizeNameInnerPadding)))
+					w.SetMinSize(fyne.NewSize(0, theme.CurrentForWidget(w).Size(theme.SizeNameInnerPadding)))
 				}),
 			),
 			nil,
