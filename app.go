@@ -7,6 +7,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/lang"
 	"fyne.io/fyne/v2/theme"
@@ -266,8 +267,14 @@ func (a *App) ShowInputDialog(title, message string, onConfirm func(string), onC
 	a.DoWhenNoOverlay(func() {
 		entry := widget.NewEntry()
 		diag := a.CreateCustomDialog(title, lang.L("OK"),
-			widget.NewForm(
-				widget.NewFormItem(message, entry),
+			container.NewVBox(
+				widget.NewForm(
+					widget.NewFormItem(message, entry),
+				),
+				Wrap(NewFiller(""), func(o fyne.CanvasObject) {
+					w := o.(*Filler)
+					w.SetMinSize(fyne.NewSize(0, theme.Size(theme.SizeNameInnerPadding)))
+				}),
 			),
 			nil,
 		)
