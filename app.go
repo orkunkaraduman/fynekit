@@ -87,7 +87,9 @@ func (a *App) Run() {
 	})
 	a.window.ShowAndRun()
 	a.runner.Stop()
-	a.destroy()
+	if a.destroy != nil {
+		a.destroy()
+	}
 }
 
 func (a *App) Rebuild() {
