@@ -175,11 +175,19 @@ func (a *App) DoWhenNoOverlay(fn func()) (done <-chan error) {
 func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx context.Context) (finalize func())) {
 	a.Do(func() {
 		ctx, cancel := context.WithCancel(ctx)
+		var activity *widget.Activity
 		if diag == nil {
+			s := a.getDialogMinSize()
+			/*diag = dialog.NewCustomWithoutButtons(lang.L("Please wait..."),
+				WrapWithMinSize(widget.NewProgressBarInfinite(), s, nil),
+				a.window,
+			)*/
+			activity = widget.NewActivity()
 			diag = dialog.NewCustomWithoutButtons(lang.L("Please wait..."),
-				WrapWithMinSize(widget.NewProgressBarInfinite(), a.getDialogMinSize(), nil),
+				WrapWithMinSize(activity, fyne.NewSize(s.Width, s.Width), nil),
 				a.window,
 			)
+			activity.Start()
 		}
 		diag.SetOnClosed(cancel)
 		diag.Show()
@@ -200,7 +208,12 @@ func (a *App) Execute(ctx context.Context, diag dialog.Dialog, fn func(ctx conte
 		go func() {
 			<-done
 			cancel()
-			fyne.DoAndWait(diag.Dismiss)
+			fyne.DoAndWait(func() {
+				diag.Dismiss()
+				if activity != nil {
+					activity.Stop()
+				}
+			})
 		}()
 	})
 }
@@ -249,14 +262,14 @@ func (a *App) ShowErrorDialog(message string, onClosed func()) {
 	})
 }
 
-func (a *App) ShowInputDialog(title, message string, icon fyne.Resource, onConfirm func(string), onCancel func()) {
+func (a *App) ShowInputDialog(title, message string, onConfirm func(string), onCancel func()) {
 	a.DoWhenNoOverlay(func() {
 		entry := widget.NewEntry()
 		diag := a.CreateCustomDialog(title, lang.L("OK"),
 			widget.NewForm(
 				widget.NewFormItem(message, entry),
 			),
-			icon,
+			nil,
 		)
 
 		confirmed := false
