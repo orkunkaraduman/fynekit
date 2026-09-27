@@ -194,48 +194,6 @@ func (m *Map) Scrolled(ev *fyne.ScrollEvent) {
 		fallthrough
 	case MapScrollActionNone:
 		return
-	/*case MapScrollActionZoomX:
-		fallthrough
-	case MapScrollActionZoomY:
-		if m.ScrollAction == MapScrollActionZoomX {
-			m.Scale += ev.Scrolled.DX / float32(m.source.TileSize())
-		} else {
-			m.Scale -= ev.Scrolled.DY / float32(m.source.TileSize())
-		}
-		switch {
-		case m.Scale < 1:
-			if m.Zoom <= 0 {
-				m.Scale = 1
-				break
-			}
-			m.Zoom -= 1
-			m.Scale = 2
-		case m.Scale >= 2:
-			if m.Zoom >= m.source.MaxZoom() {
-				m.Scale = 2
-				break
-			}
-			m.Zoom += int(math.Log2(float64(m.Scale)))
-			if x := m.source.MaxZoom(); m.Zoom > x {
-				m.Zoom = x
-				m.Scale = 2
-			} else {
-				m.Scale = 1
-			}
-		}
-		m.scrollTimer.Reset(time.Second / 8)
-		go func() {
-			select {
-			case <-time.After(2 * time.Second / 8):
-				return
-			case <-time.After(time.Second / 16):
-			case <-m.scrollTimer.C:
-			}
-			fyne.DoAndWait(func() {
-				m.Refresh()
-			})
-		}()
-		return*/
 	case MapScrollActionDrag:
 	}
 	ev.Scrolled.DX /= m.Scale
@@ -316,8 +274,6 @@ type MapScrollAction int
 const (
 	MapScrollActionNone MapScrollAction = iota
 	MapScrollActionDrag
-	//MapScrollActionZoomY
-	//MapScrollActionZoomX
 )
 
 type MapOverlay struct {
