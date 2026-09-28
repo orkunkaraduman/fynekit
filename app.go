@@ -166,7 +166,7 @@ func (a *App) DoWhenNoOverlay(fn func()) (done <-chan error) {
 			case <-ctx.Done():
 				err = ctx.Err()
 				finished = true
-			case <-time.After(time.Second / 64):
+			case <-time.After(time.Second / 16):
 			}
 		}
 		return
@@ -234,11 +234,17 @@ func (a *App) CreateBasicDialog(title, dismiss, message string, icon fyne.Resour
 	return a.CreateCustomDialog(
 		title,
 		dismiss,
-		Wrap(widget.NewLabel(message), func(o fyne.CanvasObject) {
-			w := o.(*widget.Label)
-			w.Alignment = fyne.TextAlignCenter
-			w.Wrapping = fyne.TextWrapWord
-		}),
+		container.NewVBox(
+			Wrap(widget.NewLabel(message), func(o fyne.CanvasObject) {
+				w := o.(*widget.Label)
+				w.Alignment = fyne.TextAlignCenter
+				w.Wrapping = fyne.TextWrapWord
+			}),
+			Wrap(NewFiller(""), func(o fyne.CanvasObject) {
+				w := o.(*Filler)
+				w.SetMinSize(fyne.NewSize(0, theme.CurrentForWidget(w).Size(theme.SizeNameInnerPadding)))
+			}),
+		),
 		icon,
 	)
 }
@@ -263,9 +269,56 @@ func (a *App) ShowErrorDialog(message string, onClosed func()) {
 	})
 }
 
+func (a *App) ShowYesNoDialog(title, message string, onYes func(), onNo func()) {
+	a.ShowCustomConfirmDialog(title, message, lang.L("Yes"), lang.L("No"), onYes, onNo)
+}
+
+func (a *App) ShowConfirmDialog(title, message string, onConfirm func(), onCancel func()) {
+	a.ShowCustomConfirmDialog(title, message, lang.L("Confirm"), lang.L("Cancel"), onConfirm, onCancel)
+}
+
+func (a *App) ShowCustomConfirmDialog(title, message, confirm, cancel string, onConfirm func(), onCancel func()) {
+	a.DoWhenNoOverlay(func() {
+		diag := a.CreateBasicDialog(title, lang.L("OK"), message, nil)
+
+		confirmed := false
+
+		confirmBtn := widget.NewButtonWithIcon(confirm, theme.ConfirmIcon(), func() {
+			confirmed = true
+			diag.Hide()
+		})
+		confirmBtn.Importance = widget.HighImportance
+
+		cancelBtn := widget.NewButtonWithIcon(cancel, theme.CancelIcon(), func() {
+			diag.Dismiss()
+		})
+
+		diag.SetButtons([]fyne.CanvasObject{
+			confirmBtn,
+			cancelBtn,
+		})
+
+		diag.SetOnClosed(func() {
+			if confirmed {
+				if onConfirm != nil {
+					onConfirm()
+				}
+			} else {
+				if onCancel != nil {
+					onCancel()
+				}
+			}
+
+		})
+
+		diag.Show()
+	})
+}
+
 func (a *App) ShowInputDialog(title, message string, onConfirm func(string), onCancel func()) {
 	a.DoWhenNoOverlay(func() {
 		entry := widget.NewEntry()
+
 		diag := a.CreateCustomDialog(title, lang.L("OK"),
 			container.NewVBox(
 				widget.NewForm(
@@ -281,7 +334,7 @@ func (a *App) ShowInputDialog(title, message string, onConfirm func(string), onC
 
 		confirmed := false
 
-		confirmBtn := widget.NewButtonWithIcon(lang.L("OK"), theme.ConfirmIcon(), func() {
+		confirmBtn := widget.NewButtonWithIcon(lang.L("Confirm"), theme.ConfirmIcon(), func() {
 			confirmed = true
 			diag.Hide()
 		})
