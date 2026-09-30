@@ -20,8 +20,6 @@
 *.includepath
 .junie/
 
-/bin
-/build
 /vendor
 
 /LOCALNOTES
