@@ -19,6 +19,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/orkunkaraduman/goinsane"
 )
 
 var (
@@ -55,7 +56,7 @@ type Map struct {
 
 	source      MapSource
 	cache       *mapCache
-	runner      *runner
+	runner      *goinsane.Runner
 	scrollTimer *time.Timer
 
 	dragging bool
@@ -68,7 +69,7 @@ func NewMap(source MapSource, opts ...MapOption) *Map {
 		Scale:       1.0,
 		source:      source,
 		cache:       newMapCache(source),
-		runner:      newRunner(),
+		runner:      goinsane.NewRunner(),
 		scrollTimer: time.NewTimer(0),
 	}
 	m.ExtendBaseWidget(m)
@@ -589,13 +590,13 @@ type mapCache struct {
 	source  MapSource
 	cache   map[string]image.Image
 	cacheMu sync.RWMutex
-	nl      *namedLock
+	nl      *goinsane.NamedLock
 }
 
 func newMapCache(source MapSource) *mapCache {
 	c := &mapCache{
 		source: source,
-		nl:     newNamedLock(),
+		nl:     goinsane.NewNamedLock(),
 	}
 	c.Invalidate()
 	return c

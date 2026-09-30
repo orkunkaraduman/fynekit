@@ -12,12 +12,13 @@ import (
 	"fyne.io/fyne/v2/lang"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/orkunkaraduman/goinsane"
 )
 
 type App struct {
 	build                      func(*App) fyne.CanvasObject
 	destroy                    func()
-	runner                     *runner
+	runner                     *goinsane.Runner
 	fyneApp                    fyne.App
 	window                     fyne.Window
 	appStarted                 chan struct{}
@@ -33,7 +34,7 @@ func NewApp(appID, windowTitle string, build func(*App) fyne.CanvasObject, destr
 	a := &App{
 		build:      build,
 		destroy:    destroy,
-		runner:     newRunner(),
+		runner:     goinsane.NewRunner(),
 		appStarted: make(chan struct{}),
 		appStopped: make(chan struct{}),
 	}
