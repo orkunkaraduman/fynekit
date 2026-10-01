@@ -16,7 +16,7 @@ That was their own definition, view on [GitHub](https://github.com/fyne-io/fyne)
 cross-platform, UI solution in today's world, where companies dictate their own APIs, ABIs, and programming languages.
 What makes it even better is that it uses Go, a language that is close to both system-level and user-level programming
 and has strong concurrency support. This is a GUI solution for Go; we have been waiting for years. I
-think [Fyne](https://fyne.io) has done a great job providing this need and continues to improve.  
+think [Fyne](https://fyne.io) has done a great job meeting this need and continues to improve.  
 Of course, there are other GUI projects for Go as well. If you are interested in GUI development with Go, I recommend
 checking them out too.
 
