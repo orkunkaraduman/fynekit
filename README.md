@@ -111,7 +111,7 @@ can modify widgets directly while creating the tree inline.
 
 We welcome contributions from the community to improve and expand `fynekit`'s capabilities. If you find a bug, have a
 feature request, or want to contribute code, please follow our guidelines for contributing
-([CONTRIBUTING.md](CONTRIBUTING.md)) and submit a pull request.
+[CONTRIBUTING.md](CONTRIBUTING.md) and submit a pull request.
 
 ## License
 
