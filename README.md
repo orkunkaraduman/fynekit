@@ -14,9 +14,9 @@ and continues to improve.
 Of course, there are other GUI projects for Go as well. If you are interested in GUI development with Go, I recommend
 checking them out too.
 
-**Fyne Kit** is a Go module that contains packages with various helper tools and utilities for [Fyne](https://fyne.io).
-**Fyne Kit** is also an independent open-source project that is not affiliated with the original [Fyne](https://fyne.io)
-project. It aims to provide an extended toolkit for [Fyne](https://fyne.io).
+**Fyne Kit** is a Go module that contains a package or packages with various helper tools and utilities
+for [Fyne](https://fyne.io). **Fyne Kit** is also an independent open-source project that is not affiliated with the
+original [Fyne](https://fyne.io) project. It just aims to provide an extended toolkit for [Fyne](https://fyne.io).
 
 ## Highlights
 
