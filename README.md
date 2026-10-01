@@ -1,8 +1,14 @@
 # Fyne Kit
 
-***This Go module is still under core development. There may be breaking changes even between minor versions. If you
+**Fyne Kit** is a Go module that contains a package or packages with various helper tools and utilities
+for [Fyne](https://fyne.io). **Fyne Kit** is also an independent open-source project that is not affiliated with the
+original [Fyne](https://fyne.io) project. It just aims to provide an extended toolkit for [Fyne](https://fyne.io).
+
+*Note: This Go module is still under core development. There may be breaking changes even between minor versions. If you
 plan to use it in production, you should develop against a specific version. Some experimental features may be removed
-in future versions, and new ones may be added.***
+in future versions, and new ones may be added.*
+
+## About Fyne
 
 **[Fyne](https://fyne.io) is an easy-to-use UI toolkit and app API written in Go. It is designed to build applications
 that run on desktop and mobile devices with a single codebase.**  
@@ -13,10 +19,6 @@ and has strong concurrency support. This is a GUI solution for Go; we have been 
 think [Fyne](https://fyne.io) has done a great job providing this need and continues to improve.  
 Of course, there are other GUI projects for Go as well. If you are interested in GUI development with Go, I recommend
 checking them out too.
-
-**Fyne Kit** is a Go module that contains a package or packages with various helper tools and utilities
-for [Fyne](https://fyne.io). **Fyne Kit** is also an independent open-source project that is not affiliated with the
-original [Fyne](https://fyne.io) project. It just aims to provide an extended toolkit for [Fyne](https://fyne.io).
 
 ## Highlights
 
