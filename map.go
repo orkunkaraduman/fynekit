@@ -54,10 +54,10 @@ type Map struct {
 	OnTapped     func(lat, lon float64)
 	OnCompleted  func(img image.Image, errs ...error)
 
-	source      MapSource
-	cache       *mapCache
-	runner      *goinsane.Runner
-	scrollTimer *time.Timer
+	source        MapSource
+	cache         *mapCache
+	contextRunner *goinsane.ContextRunner
+	scrollTimer   *time.Timer
 
 	dragging bool
 	draggedX float32
@@ -66,11 +66,11 @@ type Map struct {
 
 func NewMap(source MapSource, opts ...MapOption) *Map {
 	m := &Map{
-		Scale:       1.0,
-		source:      source,
-		cache:       newMapCache(source),
-		runner:      goinsane.NewRunner(),
-		scrollTimer: time.NewTimer(0),
+		Scale:         1.0,
+		source:        source,
+		cache:         newMapCache(source),
+		contextRunner: goinsane.NewContextRunner(nil),
+		scrollTimer:   time.NewTimer(0),
 	}
 	m.ExtendBaseWidget(m)
 	for _, opt := range opts {
@@ -84,7 +84,7 @@ func (m *Map) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (m *Map) Stop() {
-	m.runner.Stop()
+	m.contextRunner.Stop()
 }
 
 func (m *Map) InvalidateCache() {
@@ -388,7 +388,7 @@ func (r *mapRenderer) Refresh() {
 	for y := float32(0); y < size.Height+float32(tileSize); y += float32(tileSize) {
 		for x := float32(0); x < size.Width+float32(tileSize); x += float32(tileSize) {
 			wg.Add(1)
-			r.m.runner.RunAsync(func(ctx context.Context) {
+			r.m.contextRunner.RunAsync(func(ctx context.Context) {
 				defer wg.Done()
 				if ctx.Err() != nil {
 					return
@@ -405,7 +405,7 @@ func (r *mapRenderer) Refresh() {
 	for i, overlay := range r.m.Overlays {
 		overlays[i] = overlay
 	}
-	r.m.runner.RunAsync(func(ctx context.Context) {
+	r.m.contextRunner.RunAsync(func(ctx context.Context) {
 		overlayDrawImg := image.NewRGBA(bounds)
 		for i := range overlays {
 			if e := ctx.Err(); e != nil {

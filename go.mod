@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	fyne.io/fyne/v2 v2.8.0
 	github.com/jeandeaual/go-locale v0.0.0-20250612000132-0ef82f21eade
-	github.com/orkunkaraduman/goinsane v1.0.1
+	github.com/orkunkaraduman/goinsane v1.1.0
 	golang.org/x/text v0.22.0
 )
 

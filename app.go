@@ -18,7 +18,7 @@ import (
 type App struct {
 	build                      func(*App) fyne.CanvasObject
 	destroy                    func()
-	runner                     *goinsane.Runner
+	contextRunner              *goinsane.ContextRunner
 	fyneApp                    fyne.App
 	window                     fyne.Window
 	appStarted                 chan struct{}
@@ -32,11 +32,11 @@ type App struct {
 
 func NewApp(appID, windowTitle string, build func(*App) fyne.CanvasObject, destroy func()) *App {
 	a := &App{
-		build:      build,
-		destroy:    destroy,
-		runner:     goinsane.NewRunner(),
-		appStarted: make(chan struct{}),
-		appStopped: make(chan struct{}),
+		build:         build,
+		destroy:       destroy,
+		contextRunner: goinsane.NewContextRunner(nil),
+		appStarted:    make(chan struct{}),
+		appStopped:    make(chan struct{}),
 	}
 
 	a.fyneApp = app.NewWithID(appID)
@@ -83,12 +83,12 @@ func (a *App) Run() {
 	a.Rebuild()
 	a.window.SetCloseIntercept(func() {
 		go func() {
-			a.runner.Stop()
+			a.contextRunner.Stop()
 			fyne.DoAndWait(a.window.Close)
 		}()
 	})
 	a.window.ShowAndRun()
-	a.runner.Stop()
+	a.contextRunner.Stop()
 	if a.destroy != nil {
 		a.destroy()
 	}
@@ -127,7 +127,7 @@ func (a *App) Go(fn func(ctx context.Context) error) (done <-chan error) {
 		panic("App.Run() was not called")
 	}
 	d := make(chan error, 1)
-	err := a.runner.RunAsync(func(ctx context.Context) {
+	err := a.contextRunner.RunAsync(func(ctx context.Context) {
 		defer close(d)
 		select {
 		case <-ctx.Done():
