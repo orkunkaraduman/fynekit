@@ -9,14 +9,14 @@ that run on desktop and mobile devices with a single codebase. View on [GitHub](
 That was their own definition. To me, it is an open-source, cross-platform GUI solution in today's world, where
 companies dictate their own APIs, ABIs, and programming languages. What makes it even better is that it uses Go, a
 language that is close to both system-level and user-level programming and has strong concurrency support. This is a
-solution we have been waiting for for years. I think Fyne has done a great job solving this problem and continues to
-improve.  
+solution we have been waiting for for years. I think [Fyne](https://fyne.io) has done a great job solving this problem
+and continues to improve.  
 Of course, there are other GUI projects for Go as well. If you are interested in GUI development with Go, I recommend
 checking them out too.
 
 **Fyne Kit** is a Go module that contains packages with various helper tools and utilities for [Fyne](https://fyne.io).
 **Fyne Kit** is also an independent open-source project that is not affiliated with the original [Fyne](https://fyne.io)
-project. Its goal is to provide an extended toolkit for Fyne and help it reach more developers.
+project. It aims to provide an extended toolkit for [Fyne](https://fyne.io).
 
 ## Highlights
 
