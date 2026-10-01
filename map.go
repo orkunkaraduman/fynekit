@@ -322,6 +322,7 @@ func newMapRenderer(m *Map) *mapRenderer {
 	link.Alignment = fyne.TextAlignTrailing
 	link.SizeName = theme.SizeNameCaptionText
 	link.TextStyle.Bold = true
+	link.Truncation = fyne.TextTruncateClip
 	r.copyright = container.NewHBox(layout.NewSpacer(), link)
 
 	r.Refresh()
