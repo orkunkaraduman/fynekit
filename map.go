@@ -261,7 +261,7 @@ type MapOption func(*Map)
 type MapSource interface {
 	MaxZoom() int
 	TileSize() int
-	GetTile(ctx context.Context, x, y, zoom int) (image.Image, error)
+	GetTile(ctx context.Context, zoom, x, y int) (image.Image, error)
 	AttributionHidden() bool
 	AttributionLabel() string
 	AttributionURL() string
