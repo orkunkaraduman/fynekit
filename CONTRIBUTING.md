@@ -1,8 +1,7 @@
 # Contributing
 
-Thank you for your interest in contributing! We appreciate your help in making this project better. Before you
-start contributing, please take a moment to review the following guidelines to ensure a smooth and effective
-collaboration.
+Thank you for your interest in contributing! We appreciate your help in making this project better. Before you start
+contributing, please take a moment to review the following guidelines to ensure a smooth and effective collaboration.
 
 ## Code of Conduct
 
@@ -43,8 +42,8 @@ git commit -m "Add my new feature"
 git push origin feature/my_new_feature
 ```
 
-- Create a Pull Request: Go to the original repository on GitHub and create a Pull Request (PR) from your branch
-  to ***master*** branch. Make sure to provide a clear and detailed description of your changes in the PR.
+- Create a Pull Request: Go to the original repository on GitHub and create a Pull Request (PR) from your branch to
+  ***master*** branch. Make sure to provide a clear and detailed description of your changes in the PR.
 
 - Code Review: The project maintainers will review your PR. Please be patient during this process, and be prepared to
   address any feedback or requests for changes.
