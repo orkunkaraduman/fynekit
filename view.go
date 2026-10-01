@@ -10,7 +10,7 @@ var _ fyne.Widget = (*View)(nil)
 type View struct {
 	widget.BaseWidget
 
-	attachToItem
+	bindItemTo
 	content fyne.CanvasObject
 	minSize fyne.Size
 }
@@ -31,14 +31,14 @@ func (v *View) SetMinSize(size fyne.Size) {
 	v.Refresh()
 }
 
-func (v *View) Release() {
-	defer v.attachToItem.Release()
+func (v *View) UnbindAll() {
+	defer v.bindItemTo.UnbindAll()
 	Walk(v.content, func(o fyne.CanvasObject) bool {
 		if obj, ok := o.(interface {
 			fyne.Widget
-			Release()
+			UnbindAll()
 		}); ok {
-			obj.Release()
+			obj.UnbindAll()
 			return false
 		}
 		if obj, ok := o.(interface {
