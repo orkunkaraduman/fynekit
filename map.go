@@ -15,8 +15,6 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/orkunkaraduman/goinsane"
@@ -307,7 +305,7 @@ type mapRenderer struct {
 	m         *Map
 	drawImg   *image.RGBA
 	canvImg   *canvas.Image
-	copyright *fyne.Container
+	copyright *widget.Hyperlink
 }
 
 func newMapRenderer(m *Map) *mapRenderer {
@@ -318,12 +316,10 @@ func newMapRenderer(m *Map) *mapRenderer {
 	r.canvImg = canvas.NewImageFromImage(r.drawImg)
 
 	u, _ := url.Parse(m.source.AttributionURL())
-	link := widget.NewHyperlink(m.source.AttributionLabel(), u)
-	link.Alignment = fyne.TextAlignTrailing
-	link.SizeName = theme.SizeNameCaptionText
-	link.TextStyle.Bold = true
-	link.Truncation = fyne.TextTruncateClip
-	r.copyright = container.NewHBox(layout.NewSpacer(), link)
+	r.copyright = widget.NewHyperlink(m.source.AttributionLabel(), u)
+	r.copyright.Alignment = fyne.TextAlignTrailing
+	r.copyright.SizeName = theme.SizeNameCaptionText
+	r.copyright.TextStyle.Bold = true
 
 	r.Refresh()
 	return r
@@ -334,9 +330,11 @@ func (r *mapRenderer) Destroy() {
 
 func (r *mapRenderer) Layout(s fyne.Size) {
 	r.canvImg.Resize(s)
-	ms := r.copyright.MinSize()
-	r.copyright.Resize(fyne.NewSize(s.Width, ms.Height))
-	r.copyright.Move(fyne.NewPos(0, s.Height-ms.Height-theme.Padding()))
+
+	copyrightSize := r.copyright.MinSize()
+	r.copyright.Resize(copyrightSize)
+	r.copyright.Move(fyne.NewPos(s.Width-copyrightSize.Width-theme.Padding(), s.Height-copyrightSize.Height-theme.Padding()))
+
 	r.Refresh()
 }
 
@@ -354,6 +352,10 @@ func (r *mapRenderer) Objects() []fyne.CanvasObject {
 }
 
 func (r *mapRenderer) Refresh() {
+	defer func() {
+		r.canvImg.Refresh()
+		r.copyright.Refresh()
+	}()
 	tileSize := r.m.source.TileSize()
 	size := r.canvImg.Size()
 	size.Width /= r.m.Scale
@@ -372,14 +374,12 @@ func (r *mapRenderer) Refresh() {
 		draw.Draw(drawImg, bounds,
 			r.drawImg, image.Point{X: int(r.m.draggedX), Y: int(r.m.draggedY)}, draw.Over)
 		r.canvImg.Image = drawImg
-		r.canvImg.Refresh()
 		return
 	}
 	r.drawImg = drawImg
+	r.canvImg.Image = drawImg
 	draw.Draw(drawImg, bounds,
 		r.m.getEmptyUniformImage(), image.Point{}, draw.Over)
-	r.canvImg.Image = drawImg
-	r.canvImg.Refresh()
 	center := r.m.getPosFromLatLon(r.m.Lat, r.m.Lon, r.m.Zoom)
 	zoom := r.m.Zoom
 	var errs []error
@@ -421,11 +421,9 @@ func (r *mapRenderer) Refresh() {
 			if r.canvImg.Image == drawImg {
 				draw.Draw(drawImg, bounds, overlayDrawImg, image.Point{}, draw.Over)
 				r.canvImg.Refresh()
-				fyne.Do(func() {
-					if r.m.OnCompleted != nil {
-						r.m.OnCompleted(drawImg, errs...)
-					}
-				})
+				if r.m.OnCompleted != nil {
+					r.m.OnCompleted(drawImg, errs...)
+				}
 			}
 		})
 	})
