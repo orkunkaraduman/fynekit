@@ -376,10 +376,10 @@ func (r *mapRenderer) Refresh() {
 		r.canvImg.Image = drawImg
 		return
 	}
-	r.drawImg = drawImg
-	r.canvImg.Image = drawImg
 	draw.Draw(drawImg, bounds,
 		r.m.getEmptyUniformImage(), image.Point{}, draw.Over)
+	r.drawImg = drawImg
+	r.canvImg.Image = drawImg
 	center := r.m.getPosFromLatLon(r.m.Lat, r.m.Lon, r.m.Zoom)
 	zoom := r.m.Zoom
 	var errs []error
