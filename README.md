@@ -56,7 +56,7 @@ func NewMyView() *MyView {
 		widget.NewLabelWithData(v.TextBinding1),
 		widget.NewEntryWithData(v.TextBinding2),
 	))
-	v.BindItemToFunction(v.TextBinding2, func() {
+	v.BindFunctionToItem(v.TextBinding2, func() {
 		x, _ := v.TextBinding2.Get()
 		v.TextBinding1.Set(x)
 	})
